@@ -35,7 +35,7 @@
       <return-property name="billingUnitDate" column="billing_unit_date" />
       <return-property name="paymentSource" column="pmt_source" />
       <return-property name="paymentMethod" column="pmt_method" />
-      <return-property name="accountNo" column="account_no"/>
+      <return-property name="accountNo" column="account_no" />
     </return>
     { call MVNE_API_PKG.FETCH_PMT_TRANS(?, :in_cust_id,:in_trans_id) }
   </sql-query>

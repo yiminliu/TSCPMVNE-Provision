@@ -80,64 +80,64 @@ public class NetworkImpl implements NetworkInterface {
 
   @Override
   public NetworkInfo getNetworkInfo(String esn, String mdn) throws NetworkException {
-		if ((esn == null || esn.length() == 0) && (mdn == null || mdn.length() == 0)) {
-			throw new NetworkException("getNetworkInfo", "ESN or an MDN required");
-		} else if (esn != null && esn.length() > 0 && mdn != null && mdn.length() > 0) {
-			throw new NetworkException("getNetworkInfo", "Only an ESN or an MDN may be used.");
-		} else {
-			System.out.println("BEGIN => Network informational query for "
-					+ (esn == null ? "MDN :: " + mdn : "ESN :: " + esn));
-			NetworkInfo networkinfo = new NetworkInfo();
-			networkinfo.setEsnmeiddec(esn);
-			networkinfo.setMdn(mdn);
-			ApiResellerSubInquiryResponseHolder subscription = api.apIresellerV2SubInquiry(esn, mdn);
-			if (subscription != null) {
-				if (subscription.getAccessNbrAsgmList() != null && subscription.getAccessNbrAsgmList().getValue() != null
-						&& subscription.getAccessNbrAsgmList().getValue().size() >= 1) {
-					if (subscription.getAccessNbrAsgmList().getValue().get(0).getSwitchStatusCd().equals("C")) {
-						networkinfo
-								.setExpirationdate(subscription.getAccessNbrAsgmList().getValue().get(0).getAccessNbrAsgmEffDt());
-						networkinfo
-								.setExpirationtime(subscription.getAccessNbrAsgmList().getValue().get(0).getAccessNbrAsgmEffTm());
-					}
-					networkinfo.setMdn(subscription.getAccessNbrAsgmList().getValue().get(0).getAccessNbr());
-					networkinfo.setMsid(subscription.getAccessNbrAsgmList().getValue().get(0).getMSID());
-					networkinfo.setStatus(subscription.getAccessNbrAsgmList().getValue().get(0).getSwitchStatusCd());
-				}
+    if ((esn == null || esn.length() == 0) && (mdn == null || mdn.length() == 0)) {
+      throw new NetworkException("getNetworkInfo", "ESN or an MDN required");
+    } else if (esn != null && esn.length() > 0 && mdn != null && mdn.length() > 0) {
+      throw new NetworkException("getNetworkInfo", "Only an ESN or an MDN may be used.");
+    } else {
+      System.out.println("BEGIN => Network informational query for "
+          + (esn == null ? "MDN :: " + mdn : "ESN :: " + esn));
+      NetworkInfo networkinfo = new NetworkInfo();
+      networkinfo.setEsnmeiddec(esn);
+      networkinfo.setMdn(mdn);
+      ApiResellerSubInquiryResponseHolder subscription = api.apIresellerV2SubInquiry(esn, mdn);
+      if (subscription != null) {
+        if (subscription.getAccessNbrAsgmList() != null && subscription.getAccessNbrAsgmList().getValue() != null
+            && subscription.getAccessNbrAsgmList().getValue().size() >= 1) {
+          if (subscription.getAccessNbrAsgmList().getValue().get(0).getSwitchStatusCd().equals("C")) {
+            networkinfo
+                .setExpirationdate(subscription.getAccessNbrAsgmList().getValue().get(0).getAccessNbrAsgmEffDt());
+            networkinfo
+                .setExpirationtime(subscription.getAccessNbrAsgmList().getValue().get(0).getAccessNbrAsgmEffTm());
+          }
+          networkinfo.setMdn(subscription.getAccessNbrAsgmList().getValue().get(0).getAccessNbr());
+          networkinfo.setMsid(subscription.getAccessNbrAsgmList().getValue().get(0).getMSID());
+          networkinfo.setStatus(subscription.getAccessNbrAsgmList().getValue().get(0).getSwitchStatusCd());
+        }
 
-				if (subscription.getAccessEqpAsgmList() != null && subscription.getAccessEqpAsgmList().getValue() != null
-						&& subscription.getAccessEqpAsgmList().getValue().size() >= 1) {
-					networkinfo.setEffectivedate(subscription.getAccessEqpAsgmList().getValue().get(0).getEqpEffDt());
-					networkinfo.setEffectivetime(subscription.getAccessEqpAsgmList().getValue().get(0).getEqpEffTm());
-					networkinfo.setEsnmeiddec(subscription.getAccessEqpAsgmList().getValue().get(0).getESNMEIDDcmlId());
-					networkinfo.setEsnmeidhex(subscription.getAccessEqpAsgmList().getValue().get(0).getESNMEIDHexId());
-				}
-				System.out.println("MDN      :: " + networkinfo.getMdn());
-				System.out.println("MSID     :: " + networkinfo.getMsid());
-				System.out.println("EffDate  :: " + networkinfo.getEffectivedate());
-				System.out.println("EffTime  :: " + networkinfo.getEffectivetime());
-				System.out.println("ExpDate  :: " + networkinfo.getExpirationdate());
-				System.out.println("ExpTime  :: " + networkinfo.getExpirationtime());
-				System.out.println("ESNDec   :: " + networkinfo.getEsnmeiddec());
-				System.out.println("ESNHex   :: " + networkinfo.getEsnmeidhex());
-				System.out.println("Status   :: " + networkinfo.getStatus());
-				System.out.println("DONE => Network informational query for "
-						+ (esn == null ? "MDN :: " + mdn : "ESN :: " + esn));
-				return networkinfo;
-			} else {
-				NetworkException networkexception = new NetworkException("getNetworkInfo", "Subscriber not found for "
-						+ (networkinfo.getEsnmeiddec() == null || networkinfo.getEsnmeiddec().length() == 0 ? " ESN "
-								+ networkinfo.getEsnmeiddec() : " MDN " + networkinfo.getMdn()));
-				networkexception.setNetworkinfo(networkinfo);
-				System.out.println("Subscriber not found for "
-						+ (networkinfo.getEsnmeiddec() == null || networkinfo.getEsnmeiddec().length() == 0 ? " ESN "
-								+ networkinfo.getEsnmeiddec() : " MDN " + networkinfo.getMdn()));
-				System.out.println("DONE => Network informational query for "
-						+ (esn == null ? "MDN :: " + mdn : "ESN :: " + esn));
-				throw networkexception;
-			}
-		}
-	}
+        if (subscription.getAccessEqpAsgmList() != null && subscription.getAccessEqpAsgmList().getValue() != null
+            && subscription.getAccessEqpAsgmList().getValue().size() >= 1) {
+          networkinfo.setEffectivedate(subscription.getAccessEqpAsgmList().getValue().get(0).getEqpEffDt());
+          networkinfo.setEffectivetime(subscription.getAccessEqpAsgmList().getValue().get(0).getEqpEffTm());
+          networkinfo.setEsnmeiddec(subscription.getAccessEqpAsgmList().getValue().get(0).getESNMEIDDcmlId());
+          networkinfo.setEsnmeidhex(subscription.getAccessEqpAsgmList().getValue().get(0).getESNMEIDHexId());
+        }
+        System.out.println("MDN      :: " + networkinfo.getMdn());
+        System.out.println("MSID     :: " + networkinfo.getMsid());
+        System.out.println("EffDate  :: " + networkinfo.getEffectivedate());
+        System.out.println("EffTime  :: " + networkinfo.getEffectivetime());
+        System.out.println("ExpDate  :: " + networkinfo.getExpirationdate());
+        System.out.println("ExpTime  :: " + networkinfo.getExpirationtime());
+        System.out.println("ESNDec   :: " + networkinfo.getEsnmeiddec());
+        System.out.println("ESNHex   :: " + networkinfo.getEsnmeidhex());
+        System.out.println("Status   :: " + networkinfo.getStatus());
+        System.out.println("DONE => Network informational query for "
+            + (esn == null ? "MDN :: " + mdn : "ESN :: " + esn));
+        return networkinfo;
+      } else {
+        NetworkException networkexception = new NetworkException("getNetworkInfo", "Subscriber not found for "
+            + (networkinfo.getEsnmeiddec() == null || networkinfo.getEsnmeiddec().length() == 0 ? " ESN "
+                + networkinfo.getEsnmeiddec() : " MDN " + networkinfo.getMdn()));
+        networkexception.setNetworkinfo(networkinfo);
+        System.out.println("Subscriber not found for "
+            + (networkinfo.getEsnmeiddec() == null || networkinfo.getEsnmeiddec().length() == 0 ? " ESN "
+                + networkinfo.getEsnmeiddec() : " MDN " + networkinfo.getMdn()));
+        System.out.println("DONE => Network informational query for "
+            + (esn == null ? "MDN :: " + mdn : "ESN :: " + esn));
+        throw networkexception;
+      }
+    }
+  }
 
   public NetworkInfo getSwapNetworkInfo(String esn, String mdn) throws NetworkException {
     if (NetworkInfoUtil.checkEsn(esn) && NetworkInfoUtil.checkMdn(mdn)) {

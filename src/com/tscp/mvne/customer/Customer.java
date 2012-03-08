@@ -166,8 +166,8 @@ public class Customer {
         System.out.println("STATUS :: " + response.getStatus() + " :: MVNEMSGCODE :: " + response.getMvnemsgcode()
             + " :: MVNEMSG :: " + response.getMvnemsg());
         if (!response.getStatus().equals("Y")) {
-          throw new CustomerException("addCustAccts", "Error adding Customer Acct Map:: " + response.getMvnemsgcode()
-              + "::" + response.getMvnemsg());
+          throw new CustomerException("addCustAccts", "Error adding Customer Acct Map:: " + response.getMvnemsgcode() + "::"
+              + response.getMvnemsg());
         }
       }
     } else {
@@ -201,8 +201,8 @@ public class Customer {
         System.out.println("STATUS :: " + response.getStatus() + " :: MVNEMSGCODE :: " + response.getMvnemsgcode()
             + " :: MVNEMSG :: " + response.getMvnemsg());
         if (!response.getStatus().equals("Y")) {
-          throw new CustomerException("addCustAccts", "Error deleting Customer Acct Map:: " + response.getMvnemsgcode()
-              + "::" + response.getMvnemsg());
+          throw new CustomerException("addCustAccts", "Error deleting Customer Acct Map:: " + response.getMvnemsgcode() + "::"
+              + response.getMvnemsg());
         }
       }
     } else {
@@ -229,7 +229,7 @@ public class Customer {
         int myFirstCardNumber = Integer.parseInt(creditcard.getCreditCardNumber().substring(0, 1));
         String myAlias = " "
             + creditcard.getCreditCardNumber().substring(creditcard.getCreditCardNumber().length() - 4,
-                creditcard.getCreditCardNumber().length());
+              creditcard.getCreditCardNumber().length());
         switch (myFirstCardNumber) {
         case 3:
           myAlias = "AMEX" + myAlias;
@@ -271,7 +271,7 @@ public class Customer {
         int myFirstCardNumber = Integer.parseInt(creditcard.getCreditCardNumber().substring(0, 1));
         String myAlias = " "
             + creditcard.getCreditCardNumber().substring(creditcard.getCreditCardNumber().length() - 4,
-                creditcard.getCreditCardNumber().length());
+              creditcard.getCreditCardNumber().length());
         switch (myFirstCardNumber) {
         case 3:
           myAlias = "AMEX" + myAlias;
@@ -361,8 +361,8 @@ public class Customer {
       }
     }
     if (!isValidTransaction) {
-      throw new CustomerException("deletePayment", "Invalid Request. Payment ID " + paymentId
-          + " does not belong to cust id " + getId());
+      throw new CustomerException("deletePayment", "Invalid Request. Payment ID " + paymentId + " does not belong to cust id "
+          + getId());
     }
   }
 
