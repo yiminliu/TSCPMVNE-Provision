@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="src" path="WebContent/resources/logging"/>
 	<classpathentry kind="src" path="WebContent/resources/hibernate"/>
-	<classpathentry excluding="logging/|hibernate/" kind="src" path="WebContent/resources"/>
+	<classpathentry kind="src" path="WebContent/resources/logging"/>
+	<classpathentry excluding="hibernate/|logging/" kind="src" path="WebContent/resources"/>
 	<classpathentry kind="src" path="src_jms_services"/>
 	<classpathentry kind="src" path="src_orm"/>
 	<classpathentry kind="src" path="src_reports"/>
