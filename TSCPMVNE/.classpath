@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="WebContent/resources/logging"/>
+	<classpathentry kind="src" path="WebContent/resources/hibernate"/>
+	<classpathentry excluding="logging/|hibernate/" kind="src" path="WebContent/resources"/>
+	<classpathentry kind="src" path="src_jms_services"/>
+	<classpathentry kind="src" path="src_orm"/>
+	<classpathentry kind="src" path="src_reports"/>
+	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.web.container"/>
+	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
+	<classpathentry kind="con" path="org.eclipse.jst.server.core.container/com.sun.enterprise.jst.server.runtimeTarget/GlassFish Server Open Source Edition 3 (Java EE 6)"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jdk1.6.0_25"/>
+	<classpathentry kind="output" path="build/classes"/>
+</classpath>
