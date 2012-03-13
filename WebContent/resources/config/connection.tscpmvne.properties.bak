@@ -3,14 +3,14 @@
 #########################################################
 
 #Prod Value
-billing.location=http://uscaelm2k24/BillingServiceInterface/BillingServiceInterface.asmx?WSDL
-billing.namespace=http://www.telscape.com/BillingServiceInterface/
-billing.servicename=BillingServiceInterface
-
-#Test Values
-#billing.location=http://vm2k25-dev2/BillingServiceInterface/BillingServiceInterface.asmx?WSDL
+#billing.location=http://uscaelm2k24/BillingServiceInterface/BillingServiceInterface.asmx?WSDL
 #billing.namespace=http://www.telscape.com/BillingServiceInterface/
 #billing.servicename=BillingServiceInterface
+
+#Test Values
+billing.location=http://vm2k25-dev2/BillingServiceInterface/BillingServiceInterface.asmx?WSDL
+billing.namespace=http://www.telscape.com/BillingServiceInterface/
+billing.servicename=BillingServiceInterface
 
 #########################################################
 ##                 Network Connections

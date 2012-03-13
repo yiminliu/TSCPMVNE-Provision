@@ -3,37 +3,44 @@ package com.tscp.mvne.billing.exception;
 import com.tscp.mvne.exception.MVNEException;
 
 public class BillingException extends MVNEException {
-  private static final long serialVersionUID = 1L;
-
-  private int accountno;
-  private String externalid;
+  private static final long serialVersionUID = 3743360978816790260L;
+  private int accountNumber;
+  private String externalId;
 
   public BillingException() {
     super();
+  }
+
+  public BillingException(String message, Exception e) {
+    super(message, e);
+  }
+
+  public BillingException(String methodName, String message, Exception e) {
+    super(methodName, message, e);
+  }
+
+  public BillingException(String methodName, String message) {
+    super(methodName, message);
   }
 
   public BillingException(String message) {
     super(message);
   }
 
-  public BillingException(String methodname, String message) {
-    super(methodname, message);
+  public int getAccountNumber() {
+    return accountNumber;
   }
 
-  public int getAccountno() {
-    return accountno;
+  public void setAccountNumber(int accountNumber) {
+    this.accountNumber = accountNumber;
   }
 
-  public void setAccountno(int accountno) {
-    this.accountno = accountno;
+  public String getExternalId() {
+    return externalId;
   }
 
-  public String getExternalid() {
-    return externalid;
-  }
-
-  public void setExternalid(String externalid) {
-    this.externalid = externalid;
+  public void setExternalId(String externalId) {
+    this.externalId = externalId;
   }
 
 }

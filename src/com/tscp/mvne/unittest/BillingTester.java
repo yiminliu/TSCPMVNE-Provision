@@ -797,8 +797,8 @@ public class BillingTester {
   private void updateThresholdValue(String tn, String threshold) {
     BillingSystem billingImpl = new BillingSystem();
     ServiceInstance serviceInstance = new ServiceInstance();
-    serviceInstance.setExternalid(tn);
-    serviceInstance.setExternalidtype(3);
+    serviceInstance.setExternalId(tn);
+    serviceInstance.setExternalIdType(3);
     billingImpl.updateServiceInstanceStatus(serviceInstance, threshold);
   }
 

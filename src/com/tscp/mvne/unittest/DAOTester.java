@@ -381,10 +381,10 @@ public class DAOTester {
 
     List<Component> componentList = q.list();
     for (Component component : componentList) {
-      System.out.println("Component_id     :: " + component.getComponent_id());
-      System.out.println("Component_Name   :: " + component.getComponent_name());
-      System.out.println("Comp_Instance_id :: " + component.getComponent_instance_id());
-      System.out.println("Active_Date :: " + component.getActive_date());
+      System.out.println("Component_id     :: " + component.getId());
+      System.out.println("Component_Name   :: " + component.getName());
+      System.out.println("Comp_Instance_id :: " + component.getInstanceId());
+      System.out.println("Active_Date :: " + component.getActiveDate());
     }
 
     session.getTransaction().rollback();
@@ -437,9 +437,9 @@ public class DAOTester {
     q.setParameter("in_account_no", 684806);
     List<com.tscp.mvne.billing.Package> packageList = q.list();
     for (com.tscp.mvne.billing.Package acctPackage : packageList) {
-      System.out.println("PackageId   :: " + acctPackage.getPackageid());
-      System.out.println("PackageName :: " + acctPackage.getPackage_name());
-      System.out.println("PackageInstanceId :: " + acctPackage.getPackage_instance_id());
+      System.out.println("PackageId   :: " + acctPackage.getId());
+      System.out.println("PackageName :: " + acctPackage.getName());
+      System.out.println("PackageInstanceId :: " + acctPackage.getInstanceId());
     }
 
     session.getTransaction().rollback();
@@ -454,8 +454,8 @@ public class DAOTester {
     q.setParameter("in_account_no", 681685);
     List<ServiceInstance> serviceInstanceList = q.list();
     for (ServiceInstance si : serviceInstanceList) {
-      System.out.println("ExternalId  :: " + si.getExternalid());
-      System.out.println("SubscrNo    :: " + si.getSubscrno());
+      System.out.println("ExternalId  :: " + si.getExternalId());
+      System.out.println("SubscrNo    :: " + si.getSubscriberNumber());
     }
 
     session.getTransaction().rollback();

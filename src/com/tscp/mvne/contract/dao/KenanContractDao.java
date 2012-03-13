@@ -23,7 +23,7 @@ public class KenanContractDao {
 
     Query query = session.getNamedQuery("ins_coupon_contract");
     query.setParameter("in_account_no", contract.getAccount().getAccountno());
-    query.setParameter("in_mdn", contract.getServiceInstance().getExternalid());
+    query.setParameter("in_mdn", contract.getServiceInstance().getExternalId());
     query.setParameter("in_contract_type", contract.getContractType());
     query.setParameter("in_duration", contract.getDuration());
     GeneralSPResponse response = getQueryResponse(query.list(), transaction, session);
@@ -43,7 +43,7 @@ public class KenanContractDao {
 
     Query query = session.getNamedQuery("upd_coupon_contract");
     query.setParameter("in_account_no", contract.getAccount().getAccountno());
-    query.setParameter("in_mdn", contract.getServiceInstance().getExternalid());
+    query.setParameter("in_mdn", contract.getServiceInstance().getExternalId());
     query.setParameter("in_contract_type", contract.getContractType());
     query.setParameter("in_contract_id", contract.getContractId());
     query.setParameter("in_duration", contract.getDuration());
@@ -63,7 +63,7 @@ public class KenanContractDao {
     try {
       Query query = session.getNamedQuery("get_customer_coupons");
       query.setParameter("in_account_no", account.getAccountno());
-      query.setParameter("in_external_id", serviceInstance.getExternalid());
+      query.setParameter("in_external_id", serviceInstance.getExternalId());
       List<KenanContract> contracts = query.list();
       transaction.commit();
       return contracts;

@@ -195,7 +195,7 @@ public class WebServiceTester {
     customer.setId(2);
 
     ServiceInstance serviceInstance = new ServiceInstance();
-    serviceInstance.setExternalid("2123884164");
+    serviceInstance.setExternalId("2123884164");
 
     UsageSummary usage = tc.getUsageSummary(customer, serviceInstance);
     if (usage != null) {

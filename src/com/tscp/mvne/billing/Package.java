@@ -1,75 +1,92 @@
 package com.tscp.mvne.billing;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Date;
 
-public class Package {
-  private int packageid;
-  private int package_instance_id;
-  private String package_instance_id_serv;
-  private String package_name;
-  private Date active_date;
-  private Date inactive_date;
-  private Collection<Component> componentlist;
+public class Package implements Serializable {
+  private static final long serialVersionUID = -5062081445629324826L;
+  private int id;
+  private int instanceId;
+  private String instanceIdServ;
+  private int accountNumber;
+  private String name;
+  private Date activeDate;
+  private Date inactiveDate;
+  private Collection<Component> componentList;
 
   public Package() {
     // do nothing
   }
 
-  public int getPackageid() {
-    return packageid;
+  public int getId() {
+    return id;
   }
 
-  public void setPackageid(int packageid) {
-    this.packageid = packageid;
+  public void setId(int packageid) {
+    this.id = packageid;
   }
 
-  public int getPackage_instance_id() {
-    return package_instance_id;
+  public int getInstanceId() {
+    return instanceId;
   }
 
-  public void setPackage_instance_id(int package_instance_id) {
-    this.package_instance_id = package_instance_id;
+  public void setInstanceId(int package_instance_id) {
+    this.instanceId = package_instance_id;
   }
 
-  public String getPackage_instance_id_serv() {
-    return package_instance_id_serv;
+  public String getInstanceIdServ() {
+    return instanceIdServ;
   }
 
-  public void setPackage_instance_id_serv(String package_instance_id_serv) {
-    this.package_instance_id_serv = package_instance_id_serv;
+  public void setInstanceIdServ(String package_instance_id_serv) {
+    this.instanceIdServ = package_instance_id_serv;
   }
 
-  public String getPackage_name() {
-    return package_name;
+  public int getAccountNumber() {
+    return accountNumber;
   }
 
-  public void setPackage_name(String package_name) {
-    this.package_name = package_name;
+  public void setAccountNumber(int accountNumber) {
+    this.accountNumber = accountNumber;
   }
 
-  public Date getActive_date() {
-    return active_date;
+  public String getName() {
+    return name;
   }
 
-  public void setActive_date(Date active_date) {
-    this.active_date = active_date;
+  public void setName(String package_name) {
+    this.name = package_name;
   }
 
-  public Date getInactive_date() {
-    return inactive_date;
+  public Date getActiveDate() {
+    return activeDate;
   }
 
-  public void setInactive_date(Date inactive_date) {
-    this.inactive_date = inactive_date;
+  public void setActiveDate(Date active_date) {
+    this.activeDate = active_date;
   }
 
-  public Collection<Component> getComponentlist() {
-    return componentlist;
+  public Date getInactiveDate() {
+    return inactiveDate;
   }
 
-  public void setComponentlist(Collection<Component> componentlist) {
-    this.componentlist = componentlist;
+  public void setInactiveDate(Date inactive_date) {
+    this.inactiveDate = inactive_date;
+  }
+
+  public Collection<Component> getComponentList() {
+    return componentList;
+  }
+
+  public void setComponentList(Collection<Component> componentlist) {
+    this.componentList = componentlist;
+  }
+
+  @Override
+  public String toString() {
+    return "Package [id=" + id + ", instanceId=" + instanceId + ", instanceIdServ=" + instanceIdServ + ", name=" + name
+        + ", activeDate=" + activeDate + ", inactiveDate=" + inactiveDate + ", componentList=" + componentList + "]";
   }
 
 }

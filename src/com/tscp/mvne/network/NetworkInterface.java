@@ -7,6 +7,9 @@ public interface NetworkInterface {
   public static final String DEVICE_STATUS_ACTIVE = "A";
   public static final String DEVICE_STATUS_CANCELLED = "C";
   public static final String DEVICE_STATUS_SUSPENDED = "S";
+  public static final String DEVICE_STATUS_HOTLINED = "H";
+  public static final String DEVICE_STATUS_RESERVED = "R";
+  public static final String DEVICE_STATUS_PREVIOUSLY_SWAPPED = "P";
 
   public static final int ESN_DEC_LENGTH = 11;
   public static final int ESN_HEX_LENGTH = 8;
@@ -27,5 +30,7 @@ public interface NetworkInterface {
   public void disconnectService(NetworkInfo networkinfo) throws NetworkException;
 
   public void swapESN(NetworkInfo oldnetworkinfo, NetworkInfo newnetworkinfo) throws NetworkException;
+
+  public NetworkInfo getSwapNetworkInfo(String esn, String mdn) throws NetworkException;
 
 }

@@ -74,7 +74,7 @@ public class KenanContract {
   }
 
   private boolean validateServiceInstance() {
-    if (serviceInstance == null || serviceInstance.getExternalid() == null || serviceInstance.getExternalid().isEmpty()) {
+    if (serviceInstance == null || serviceInstance.getExternalId() == null || serviceInstance.getExternalId().isEmpty()) {
       return false;
     } else {
       return true;

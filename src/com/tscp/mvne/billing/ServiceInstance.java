@@ -1,77 +1,64 @@
 package com.tscp.mvne.billing;
 
+import java.io.Serializable;
 import java.util.Date;
 
-public class ServiceInstance {
-  private int subscrno;
-  private int externalidtype;
-  private String externalid;
-  private Date activedate;
-  private Date inactivedate;
+public class ServiceInstance implements Serializable {
+  private static final long serialVersionUID = 8814958679258867200L;
+  private int subscriberNumber;
+  private int externalIdType;
+  private String externalId;
+  private Date activeDate;
+  private Date inactiveDate;
 
   public ServiceInstance() {
     // do nothing
   }
 
-  public int getSubscrno() {
-    return subscrno;
+  public int getSubscriberNumber() {
+    return subscriberNumber;
   }
 
-  public void setSubscrno(int subscrno) {
-    this.subscrno = subscrno;
+  public void setSubscriberNumber(int subscriberNumber) {
+    this.subscriberNumber = subscriberNumber;
   }
 
-  public int getExternalidtype() {
-    return externalidtype;
+  public int getExternalIdType() {
+    return externalIdType;
   }
 
-  public void setExternalidtype(int externalidtype) {
-    this.externalidtype = externalidtype;
+  public void setExternalIdType(int externalIdType) {
+    this.externalIdType = externalIdType;
   }
 
-  public String getExternalid() {
-    return externalid;
+  public String getExternalId() {
+    return externalId;
   }
 
-  public void setExternalid(String externalid) {
-    this.externalid = externalid;
+  public void setExternalId(String externalId) {
+    this.externalId = externalId;
   }
 
-  public Date getActivedate() {
-    return activedate;
+  public Date getActiveDate() {
+    return activeDate;
   }
 
-  public void setActivedate(Date activedate) {
-    this.activedate = activedate;
+  public void setActiveDate(Date activeDate) {
+    this.activeDate = activeDate;
   }
 
-  public Date getInactivedate() {
-    return inactivedate;
+  public Date getInactiveDate() {
+    return inactiveDate;
   }
 
-  public void setInactivedate(Date inactivedate) {
-    this.inactivedate = inactivedate;
+  public void setInactiveDate(Date inactiveDate) {
+    this.inactiveDate = inactiveDate;
   }
 
   @Override
   public String toString() {
-    StringBuffer sb = new StringBuffer();
-    sb.append("ServiceInstance Object ...");
-    sb.append(" \n");
-    sb.append("SubscrNo         :: " + getSubscrno());
-    sb.append(" \n");
-    sb.append("ExternalIdType   :: " + getExternalidtype());
-    sb.append(" \n");
-    sb.append("ExternalId       :: " + getExternalid());
-    sb.append(" \n");
-    sb.append("ActiveDate       :: " + getActivedate());
-    sb.append(" \n");
-    sb.append("InactiveDate     :: " + getInactivedate());
-    return sb.toString();
+    return "ServiceInstance [subscriberNumber=" + subscriberNumber + ", externalIdType=" + externalIdType + ", externalId="
+        + externalId + ", activeDate=" + activeDate + ", inactiveDate=" + inactiveDate + "]";
   }
 
-  public String toFormattedStrng() {
-    // TODO
-    return toString();
-  }
 }
