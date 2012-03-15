@@ -7,7 +7,7 @@ import java.util.List;
 import com.tscp.mvne.TruConnect;
 import com.tscp.mvne.billing.Account;
 import com.tscp.mvne.billing.ServiceInstance;
-import com.tscp.mvne.billing.dao.UsageSummary;
+import com.tscp.mvne.billing.usage.UsageSummary;
 import com.tscp.mvne.customer.Customer;
 import com.tscp.mvne.customer.dao.CustAcctMapDAO;
 import com.tscp.mvne.customer.dao.CustTopUp;

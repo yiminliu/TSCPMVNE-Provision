@@ -15,8 +15,8 @@ import com.tscp.mvne.hibernate.HibernateUtil;
 import com.tscp.mvne.notification.EmailTemplate;
 import com.tscp.mvne.notification.Notification;
 import com.tscp.mvne.notification.NotificationCategory;
-import com.tscp.mvne.notification.NotificationException;
 import com.tscp.mvne.notification.NotificationType;
+import com.tscp.mvne.notification.exception.NotificationException;
 
 @SuppressWarnings("unchecked")
 public class EmailNotification implements Notification, Serializable {

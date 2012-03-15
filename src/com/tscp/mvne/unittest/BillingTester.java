@@ -171,8 +171,7 @@ public class BillingTester {
       String namespace = connProps.getProperty("billing.namespace");
       String servicename = connProps.getProperty("billing.servicename");
 
-      BillingServiceInterface bsi = new BillingServiceInterface(new URL(wsdlLocation),
-          new QName(namespace, servicename));
+      BillingServiceInterface bsi = new BillingServiceInterface(new URL(wsdlLocation), new QName(namespace, servicename));
       BillingServiceInterfaceSoap port = bsi.getBillingServiceInterfaceSoap();
 
       BillingAccount billingAccount = new BillingAccount();
@@ -244,7 +243,7 @@ public class BillingTester {
       billingAccount.setVipCode(Short.parseShort(props.getProperty("account.vip_code")));
       try {
         XMLGregorianCalendar value = DatatypeFactory.newInstance().newXMLGregorianCalendar(
-            new GregorianCalendar(TimeZone.getTimeZone("America/Los_Angeles")));
+          new GregorianCalendar(TimeZone.getTimeZone("America/Los_Angeles")));
         // DataTypeFactory.newXML
         System.out.println(value);
         billingAccount.setSysDate(value);
@@ -365,8 +364,7 @@ public class BillingTester {
       String servicename = props.getProperty("billing.servicename");
       String wsdlLocation = props.getProperty("billing.location");
 
-      BillingServiceInterface bsi = new BillingServiceInterface(new URL(wsdlLocation),
-          new QName(namespace, servicename));
+      BillingServiceInterface bsi = new BillingServiceInterface(new URL(wsdlLocation), new QName(namespace, servicename));
       BillingServiceInterfaceSoap port = bsi.getBillingServiceInterfaceSoap();
 
       ValueHolder valueHolder = port.getEmail("dtat", "689555");
@@ -405,16 +403,15 @@ public class BillingTester {
       String namespace = connProps.getProperty("billing.namespace");
       String servicename = connProps.getProperty("billing.servicename");
 
-      BillingServiceInterface bsi = new BillingServiceInterface(new URL(wsdlLocation),
-          new QName(namespace, servicename));
+      BillingServiceInterface bsi = new BillingServiceInterface(new URL(wsdlLocation), new QName(namespace, servicename));
       BillingServiceInterfaceSoap port = bsi.getBillingServiceInterfaceSoap();
       System.out.println("Account Categroy :: " + props.getProperty("account.account_category"));
       System.out.println("Currency Code :: " + props.getProperty("account.currency_code"));
 
       XMLGregorianCalendar sysdate = DatatypeFactory.newInstance().newXMLGregorianCalendar(
-          new GregorianCalendar(TimeZone.getTimeZone("America/Los_Angeles")));
+        new GregorianCalendar(TimeZone.getTimeZone("America/Los_Angeles")));
       XMLGregorianCalendar activeDate = DatatypeFactory.newInstance().newXMLGregorianCalendar(
-          new GregorianCalendar(2011, 6, 26));
+        new GregorianCalendar(2011, 6, 26));
 
       short currencycode = Short.parseShort(props.getProperty("service.currency_code"));
       short emfconfigid = Short.parseShort(props.getProperty("service.emf_config_id"));
@@ -483,8 +480,7 @@ public class BillingTester {
       String servicename = props.getProperty("billing.servicename");
       String wsdlLocation = props.getProperty("billing.location");
 
-      BillingServiceInterface bsi = new BillingServiceInterface(new URL(wsdlLocation),
-          new QName(namespace, servicename));
+      BillingServiceInterface bsi = new BillingServiceInterface(new URL(wsdlLocation), new QName(namespace, servicename));
       // bsi = new BillingServiceInterface();
       BillingServiceInterfaceSoap port = bsi.getBillingServiceInterfaceSoap();
 
@@ -529,9 +525,9 @@ public class BillingTester {
       BillingServiceInterfaceSoap port = bsi.getBillingServiceInterfaceSoap();
 
       XMLGregorianCalendar sysdate = DatatypeFactory.newInstance().newXMLGregorianCalendar(
-          new GregorianCalendar(TimeZone.getTimeZone("America/Los_Angeles")));
+        new GregorianCalendar(TimeZone.getTimeZone("America/Los_Angeles")));
       XMLGregorianCalendar activeDate = DatatypeFactory.newInstance().newXMLGregorianCalendar(
-          new GregorianCalendar(2011, 7, 26));
+        new GregorianCalendar(2011, 7, 26));
 
       int packageid = Integer.parseInt(props.getProperty("package.package_id"));
       short externalidtype = Short.parseShort(props.getProperty("package.external_id_type"));
@@ -581,9 +577,9 @@ public class BillingTester {
       BillingServiceInterfaceSoap port = bsi.getBillingServiceInterfaceSoap();
 
       XMLGregorianCalendar sysdate = DatatypeFactory.newInstance().newXMLGregorianCalendar(
-          new GregorianCalendar(TimeZone.getTimeZone("America/Los_Angeles")));
+        new GregorianCalendar(TimeZone.getTimeZone("America/Los_Angeles")));
       XMLGregorianCalendar activeDate = DatatypeFactory.newInstance().newXMLGregorianCalendar(
-          new GregorianCalendar(2011, 7, 26));
+        new GregorianCalendar(2011, 7, 26));
 
       int componentid = Integer.parseInt(props.getProperty("component.reinstall.component"));
       int packageid = Integer.parseInt(props.getProperty("component.package_id"));
@@ -604,8 +600,7 @@ public class BillingTester {
       components.getPkgComponent().add(pkgComponent);
 
       ArrayOfMessageHolder messageHolder = port.addComponent("username", components);
-      if (messageHolder != null && messageHolder.getMessageHolder() != null
-          && messageHolder.getMessageHolder().size() > 0) {
+      if (messageHolder != null && messageHolder.getMessageHolder() != null && messageHolder.getMessageHolder().size() > 0) {
         for (MessageHolder message : messageHolder.getMessageHolder()) {
           System.out.println("Status  :: " + message.getStatus());
           System.out.println("Message :: " + message.getMessage());
@@ -631,20 +626,18 @@ public class BillingTester {
     // "http://vm2k25-dev2/BillingServiceInterface/BillingServiceInterface.asmx?WSDL";
     String wsdlLocation = "http://uscaelm2k24/BillingServiceInterface/BillingServiceInterface.asmx?WSDL";
     try {
-      BillingServiceInterface bsi = new BillingServiceInterface(new URL(wsdlLocation),
-          new QName(namespace, servicename));
+      BillingServiceInterface bsi = new BillingServiceInterface(new URL(wsdlLocation), new QName(namespace, servicename));
       BillingServiceInterfaceSoap port = bsi.getBillingServiceInterfaceSoap();
 
       String externalId = accountNo;
       int externalIdType = 1;
       String amount = "1000";
       XMLGregorianCalendar transDate = DatatypeFactory.newInstance().newXMLGregorianCalendar(
-          new GregorianCalendar(TimeZone.getTimeZone("America/Los Angeles")));
+        new GregorianCalendar(TimeZone.getTimeZone("America/Los Angeles")));
       int transType = 1;
       String submitBy = "dta";
 
-      MessageHolder message = port
-          .addPayment("api", externalId, externalIdType, amount, transDate, transType, submitBy);
+      MessageHolder message = port.addPayment("api", externalId, externalIdType, amount, transDate, transType, submitBy);
       System.out.println("Payment Posting Response...");
       if (message != null) {
         System.out.println("Status  :: " + message.getStatus());
@@ -700,8 +693,7 @@ public class BillingTester {
       String servicename = props.getProperty("billing.servicename");
       String wsdlLocation = props.getProperty("billing.location");
 
-      BillingServiceInterface bsi = new BillingServiceInterface(new URL(wsdlLocation),
-          new QName(namespace, servicename));
+      BillingServiceInterface bsi = new BillingServiceInterface(new URL(wsdlLocation), new QName(namespace, servicename));
       BillingServiceInterfaceSoap port = bsi.getBillingServiceInterfaceSoap();
 
       ValueHolder value = port.getAccountNo("usernmae", "2123884164");
@@ -741,8 +733,7 @@ public class BillingTester {
       String servicename = props.getProperty("billing.servicename");
       String wsdlLocation = props.getProperty("billing.location");
 
-      BillingServiceInterface bsi = new BillingServiceInterface(new URL(wsdlLocation),
-          new QName(namespace, servicename));
+      BillingServiceInterface bsi = new BillingServiceInterface(new URL(wsdlLocation), new QName(namespace, servicename));
       BillingServiceInterfaceSoap port = bsi.getBillingServiceInterfaceSoap();
 
       ArrayOfPaymentHolder paymentHolderList = port.getCompletePaymentHistory("username", accountNo);
@@ -776,8 +767,7 @@ public class BillingTester {
       String servicename = props.getProperty("billing.servicename");
       String wsdlLocation = props.getProperty("billing.location");
 
-      BillingServiceInterface bsi = new BillingServiceInterface(new URL(wsdlLocation),
-          new QName(namespace, servicename));
+      BillingServiceInterface bsi = new BillingServiceInterface(new URL(wsdlLocation), new QName(namespace, servicename));
       BillingServiceInterfaceSoap port = bsi.getBillingServiceInterfaceSoap();
 
       ContactInfoHolder valueHolder = port.getContactInfo("dtat", "681894");
@@ -794,7 +784,7 @@ public class BillingTester {
     }
   }
 
-  private void updateThresholdValue(String tn, String threshold) {
+  private void updateThresholdValue(String tn, int threshold) {
     BillingSystem billingImpl = new BillingSystem();
     ServiceInstance serviceInstance = new ServiceInstance();
     serviceInstance.setExternalId(tn);
@@ -815,8 +805,7 @@ public class BillingTester {
       String servicename = props.getProperty("billing.servicename");
       String wsdlLocation = props.getProperty("billing.location");
 
-      BillingServiceInterface bsi = new BillingServiceInterface(new URL(wsdlLocation),
-          new QName(namespace, servicename));
+      BillingServiceInterface bsi = new BillingServiceInterface(new URL(wsdlLocation), new QName(namespace, servicename));
       // bsi = new BillingServiceInterface();
       BillingServiceInterfaceSoap port = bsi.getBillingServiceInterfaceSoap();
       UsageHolder usageHolder = port.getUnbilledDataMBs("username", "2138043419");
@@ -857,8 +846,7 @@ public class BillingTester {
       String servicename = props.getProperty("billing.servicename");
       String wsdlLocation = props.getProperty("billing.location");
 
-      BillingServiceInterface bsi = new BillingServiceInterface(new URL(wsdlLocation),
-          new QName(namespace, servicename));
+      BillingServiceInterface bsi = new BillingServiceInterface(new URL(wsdlLocation), new QName(namespace, servicename));
       // bsi = new BillingServiceInterface();
       BillingServiceInterfaceSoap port = bsi.getBillingServiceInterfaceSoap();
       CustBalanceHolder valueHolder = port.getCurrentBalance("dta", "698177");
@@ -895,8 +883,7 @@ public class BillingTester {
       String servicename = props.getProperty("billing.servicename");
       String wsdlLocation = props.getProperty("billing.location");
 
-      BillingServiceInterface bsi = new BillingServiceInterface(new URL(wsdlLocation),
-          new QName(namespace, servicename));
+      BillingServiceInterface bsi = new BillingServiceInterface(new URL(wsdlLocation), new QName(namespace, servicename));
       // bsi = new BillingServiceInterface();
       BillingServiceInterfaceSoap port = bsi.getBillingServiceInterfaceSoap();
       // ValueHolder valueHolder = port.getCurrentBalance("dta", "681893");
@@ -957,8 +944,7 @@ public class BillingTester {
       String servicename = props.getProperty("billing.servicename");
       String wsdlLocation = props.getProperty("billing.location");
 
-      BillingServiceInterface bsi = new BillingServiceInterface(new URL(wsdlLocation),
-          new QName(namespace, servicename));
+      BillingServiceInterface bsi = new BillingServiceInterface(new URL(wsdlLocation), new QName(namespace, servicename));
       // bsi = new BillingServiceInterface();
       BillingServiceInterfaceSoap port = bsi.getBillingServiceInterfaceSoap();
 
@@ -1003,8 +989,7 @@ public class BillingTester {
       String servicename = props.getProperty("billing.servicename");
       String wsdlLocation = props.getProperty("billing.location");
 
-      BillingServiceInterface bsi = new BillingServiceInterface(new URL(wsdlLocation),
-          new QName(namespace, servicename));
+      BillingServiceInterface bsi = new BillingServiceInterface(new URL(wsdlLocation), new QName(namespace, servicename));
       // bsi = new BillingServiceInterface();
       BillingServiceInterfaceSoap port = bsi.getBillingServiceInterfaceSoap();
 
@@ -1055,8 +1040,7 @@ public class BillingTester {
       String wsdlLocation = props.getProperty("billing.location");
 
       if (port == null) {
-        BillingServiceInterface bsi = new BillingServiceInterface(new URL(wsdlLocation), new QName(namespace,
-            servicename));
+        BillingServiceInterface bsi = new BillingServiceInterface(new URL(wsdlLocation), new QName(namespace, servicename));
         port = bsi.getBillingServiceInterfaceSoap();
       }
       return port;

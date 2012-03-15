@@ -9,38 +9,38 @@ import com.tscp.mvne.notification.dao.NotificationParameter;
 
 public interface Notification {
 
-  public int getNotificationId();
+  public int getAttemptNo();
 
-  public void setNotificationId(int notificationId);
+  public Date getCreateDate();
 
   @Enumerated
   public NotificationCategory getNotificationCategory();
 
-  public void setNotificationCategory(NotificationCategory notificationCategory);
+  public int getNotificationId();
+
+  public List<NotificationParameter> getNotificationParameters();
 
   @Enumerated
   public NotificationType getNotificationType();
 
-  public void setNotificationType(NotificationType notificationType);
-
-  public Date getCreateDate();
-
-  public void setCreateDate(Date createDate);
-
-  public int getAttemptNo();
-
-  public void setAttemptNo(int attemptNo);
-
   public Date getSentDate();
-
-  public void setSentDate(Date sentDate);
 
   public void loadNotification();
 
   public void saveNotification();
 
-  public List<NotificationParameter> getNotificationParameters();
+  public void setAttemptNo(int attemptNo);
+
+  public void setCreateDate(Date createDate);
+
+  public void setNotificationCategory(NotificationCategory notificationCategory);
+
+  public void setNotificationId(int notificationId);
 
   public void setNotificationParameters(List<NotificationParameter> notificationParametersList);
+
+  public void setNotificationType(NotificationType notificationType);
+
+  public void setSentDate(Date sentDate);
 
 }

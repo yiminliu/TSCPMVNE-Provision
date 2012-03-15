@@ -4,7 +4,6 @@ import java.io.Serializable;
 
 public class NotificationParameter implements Serializable {
   private static final long serialVersionUID = 1L;
-
   int notificationId;
   int seq;
   String key;
@@ -49,19 +48,4 @@ public class NotificationParameter implements Serializable {
   public void setValue(String value) {
     this.value = value;
   }
-
-  @Override
-  public String toString() {
-    StringBuffer sb = new StringBuffer();
-    sb.append("NotificationParameter object....");
-    sb.append("\n");
-    sb.append("NotificationId  :: " + getNotificationId());
-    sb.append("\n");
-    sb.append("Key             :: " + getKey());
-    sb.append("\n");
-    sb.append("Value           :: " + getValue());
-    sb.append("\n");
-    return sb.toString();
-  }
-
 }

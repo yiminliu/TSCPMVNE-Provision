@@ -1,5 +1,5 @@
 package com.tscp.mvne.notification;
 
 public enum EmailTemplate {
-  welcome, topup, paymentFailed, balanceForfeit, accountInactive, updatePaymentMethod, topup2, truConnectProcessFailure
+  welcome, topup, topup2, paymentFailed, balanceForfeit, accountInactive, updatePaymentMethod, truConnectProcessFailure
 }

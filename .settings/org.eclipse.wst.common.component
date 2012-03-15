@@ -5,6 +5,9 @@
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src_billing"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src_config"/>
+        <wb-resource deploy-path="/WEB-INF/classes" source-path="/WebContent/resources/logging"/>
+        <wb-resource deploy-path="/WEB-INF/classes" source-path="/src_network"/>
+        <wb-resource deploy-path="/WEB-INF/classes" source-path="/src_jms"/>
         <property name="context-root" value="TSCPMVNE-Production"/>
         <property name="java-output-path" value="/TSCPMVNE-Production/build/classes"/>
     </wb-module>

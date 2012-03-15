@@ -16,7 +16,7 @@ import com.tscp.mvne.billing.Component;
 import com.tscp.mvne.billing.ServiceInstance;
 import com.tscp.mvne.billing.api.BillName;
 import com.tscp.mvne.billing.api.CustAddress;
-import com.tscp.mvne.billing.dao.UsageDetail;
+import com.tscp.mvne.billing.usage.UsageDetail;
 import com.tscp.mvne.customer.Customer;
 import com.tscp.mvne.customer.dao.CustAcctMapDAO;
 import com.tscp.mvne.customer.dao.DeviceAssociation;
@@ -24,7 +24,7 @@ import com.tscp.mvne.customer.dao.DeviceInfo;
 import com.tscp.mvne.customer.dao.DeviceStatus;
 import com.tscp.mvne.customer.dao.GeneralSPResponse;
 import com.tscp.mvne.hibernate.HibernateUtil;
-import com.tscp.mvne.network.NetworkImpl;
+import com.tscp.mvne.network.NetworkSystem;
 import com.tscp.mvne.network.NetworkInfo;
 import com.tscp.mvne.payment.PaymentInformation;
 import com.tscp.mvne.payment.PaymentType;
@@ -142,7 +142,7 @@ public class DAOTester {
     session.getTransaction().commit();
     if (reservedMDNList != null && reservedMDNList.size() > 0) {
       for (ReservedMDN reservedMDN : reservedMDNList) {
-        NetworkImpl networkImpl = new NetworkImpl();
+        NetworkSystem networkImpl = new NetworkSystem();
         try {
           NetworkInfo networkInfo = new NetworkInfo();
           networkInfo.setMdn(reservedMDN.getMDN());

@@ -20,10 +20,10 @@ import com.tscp.mvne.billing.ServiceInstance;
 import com.tscp.mvne.billing.api.Payment;
 import com.tscp.mvne.billing.api.PaymentHolder;
 import com.tscp.mvne.billing.api.UsageHolder;
-import com.tscp.mvne.billing.dao.UsageDetail;
-import com.tscp.mvne.billing.dao.UsageSummary;
 import com.tscp.mvne.billing.exception.BillingException;
-import com.tscp.mvne.billing.provisioning.service.ProvisioningService;
+import com.tscp.mvne.billing.usage.UsageDetail;
+import com.tscp.mvne.billing.usage.UsageSummary;
+import com.tscp.mvne.config.Provision;
 import com.tscp.mvne.contract.ContractService;
 import com.tscp.mvne.contract.KenanContract;
 import com.tscp.mvne.customer.Customer;
@@ -37,21 +37,20 @@ import com.tscp.mvne.customer.dao.DeviceAssociation;
 import com.tscp.mvne.customer.dao.DeviceInfo;
 import com.tscp.mvne.customer.dao.DeviceStatus;
 import com.tscp.mvne.exception.MVNEException;
-import com.tscp.mvne.jms.NotificationSender;
-import com.tscp.mvne.jms.TestNotificationHandler;
 import com.tscp.mvne.logger.LoggerHelper;
 import com.tscp.mvne.logger.TscpmvneLogger;
-import com.tscp.mvne.network.NetworkException;
-import com.tscp.mvne.network.NetworkImpl;
 import com.tscp.mvne.network.NetworkInfo;
 import com.tscp.mvne.network.NetworkInterface;
+import com.tscp.mvne.network.NetworkSystem;
+import com.tscp.mvne.network.exception.NetworkException;
 import com.tscp.mvne.notification.EmailTemplate;
 import com.tscp.mvne.notification.NotificationCategory;
-import com.tscp.mvne.notification.NotificationException;
-import com.tscp.mvne.notification.NotificationSystemImpl;
+import com.tscp.mvne.notification.NotificationSender;
+import com.tscp.mvne.notification.NotificationSystem;
 import com.tscp.mvne.notification.NotificationType;
 import com.tscp.mvne.notification.dao.EmailNotification;
 import com.tscp.mvne.notification.dao.NotificationParameter;
+import com.tscp.mvne.notification.exception.NotificationException;
 import com.tscp.mvne.payment.PaymentException;
 import com.tscp.mvne.payment.PaymentType;
 import com.tscp.mvne.payment.dao.CreditCard;
@@ -66,12 +65,11 @@ import com.tscp.mvne.refund.RefundService;
 @WebService
 public class TruConnect implements TscpMvne {
   private static TscpmvneLogger logger;
-  private NetworkImpl networkimpl;
+  private NetworkSystem networkimpl;
   private BillingSystem billingSystem;
-  private NotificationSystemImpl notificationSystemImpl;
+  private NotificationSystem notificationSystemImpl;
   private ContractService contractService;
   private RefundService refundService;
-  private ProvisioningService provisioningService;
 
   public TruConnect() {
     init();
@@ -197,14 +195,6 @@ public class TruConnect implements TscpMvne {
   }
 
   @WebMethod
-  public void clearJMSQueue() {
-    logger.info("Attempting to clear the JMS Queue");
-    TestNotificationHandler tnh = new TestNotificationHandler();
-    tnh.run();
-    logger.info("clearJMSQueue done being called...");
-  }
-
-  @WebMethod
   @Override
   public Account createBillingAccount(Customer customer, Account account) {
     LoggerHelper logHelper = new LoggerHelper("createBillingAccount", customer, account);
@@ -234,7 +224,7 @@ public class TruConnect implements TscpMvne {
     logger.info("adding package");
     billingSystem.addPackage(account, serviceInstance, lPackage);
     com.tscp.mvne.billing.Component componentid = new com.tscp.mvne.billing.Component();
-    componentid.setId(BillingSystem.COMPONENT_REINSTALL);
+    componentid.setId(Provision.Component.REINSTALL);
     logger.info("adding Component");
     billingSystem.addComponent(account, serviceInstance, lPackage, componentid);
 
@@ -716,12 +706,12 @@ public class TruConnect implements TscpMvne {
   @WebMethod(exclude = true)
   public void init() {
     logger = new TscpmvneLogger();
-    networkimpl = new NetworkImpl();
+    networkimpl = new NetworkSystem();
     billingSystem = new BillingSystem();
-    notificationSystemImpl = new NotificationSystemImpl();
+    notificationSystemImpl = new NotificationSystem();
     contractService = new ContractService();
     refundService = new RefundService();
-    provisioningService = new ProvisioningService();
+
   }
 
   /**
@@ -880,8 +870,8 @@ public class TruConnect implements TscpMvne {
         Account loadedAccount = billingSystem.getAccountByAccountNo(account.getAccountno());
         for (ServiceInstance serviceInstance : loadedAccount.getServiceinstancelist()) {
           logger.info("Updating threshold value for ServiceInstance " + serviceInstance.getExternalId() + " to "
-              + BillingSystem.SERVICE_INSTANCE_RESTORED);
-          billingSystem.updateServiceInstanceStatus(serviceInstance, BillingSystem.SERVICE_INSTANCE_RESTORED);
+              + Provision.SERVICE.RESTORE);
+          billingSystem.updateServiceInstanceStatus(serviceInstance, Provision.SERVICE.RESTORE);
         }
       }
       // throw new
@@ -1073,7 +1063,7 @@ public class TruConnect implements TscpMvne {
     }
 
     logger.info("Updating Billing System with restored flag...");
-    billingSystem.updateServiceInstanceStatus(serviceInstance, BillingSystem.SERVICE_INSTANCE_RESTORED);
+    billingSystem.updateServiceInstanceStatus(serviceInstance, Provision.SERVICE.RESTORE);
 
     if (deviceInfo != null) {
       logger.info("updating deviceInfo[" + deviceInfo.getDeviceId() + "] to AC - " + DeviceStatus.DESC_ACTIVE);
@@ -1112,8 +1102,8 @@ public class TruConnect implements TscpMvne {
     }
     notification.setBccList(notificationSystemImpl.getBccList());
     notification.setFrom(notificationSystemImpl.getFrom());
-    NotificationSender notificationSender = new NotificationSender(notification);
-    notificationSender.send();
+    NotificationSender notificationSender = new NotificationSender();
+    notificationSender.send(notification);
   }
 
   private void sendPaymentFailedNotification(Customer customer, Account account, PaymentTransaction paymentTransaction) {
@@ -1152,8 +1142,8 @@ public class TruConnect implements TscpMvne {
     emailNotification.setNotificationParameters(notificationParametersList);
     emailNotification.setCustId(customer.getId());
     logger.info("Sending " + emailNotification.getTemplate() + " email");
-    NotificationSender notificationSender = new NotificationSender(emailNotification);
-    notificationSender.send();
+    NotificationSender notificationSender = new NotificationSender();
+    notificationSender.send(emailNotification);
   }
 
   private void sendPaymentNotification(Customer customer, Account account, PaymentTransaction paymentTransaction) {
@@ -1220,7 +1210,7 @@ public class TruConnect implements TscpMvne {
     notificationParameterList.add(np);
 
     // truconnectManagesite
-    np = new NotificationParameter("truconnectManageSite", NotificationSystemImpl.truconnectManageSite);
+    np = new NotificationParameter("truconnectManageSite", NotificationSystem.truconnectManageSite);
     notificationParameterList.add(np);
 
     // recentActivitySite
@@ -1321,8 +1311,8 @@ public class TruConnect implements TscpMvne {
     email.setNotificationCategory(NotificationCategory.INFO);
     email.setNotificationType(NotificationType.EMAIL);
     email.setCustId(customer.getId());
-    NotificationSender notificationSender = new NotificationSender(email);
-    notificationSender.send();
+    NotificationSender notificationSender = new NotificationSender();
+    notificationSender.send(email);
 
     if (email.getNotificationId() != 0) {
       logger.info("Saving pmt invoice mapping");
@@ -1430,7 +1420,7 @@ public class TruConnect implements TscpMvne {
     np = new NotificationParameter("email", account.getContact_email());
     notificationParameterList.add(np);
 
-    np = new NotificationParameter("truconnectManageSite", NotificationSystemImpl.truconnectManageSite);
+    np = new NotificationParameter("truconnectManageSite", NotificationSystem.truconnectManageSite);
     notificationParameterList.add(np);
 
     EmailNotification email = new EmailNotification();
@@ -1451,8 +1441,8 @@ public class TruConnect implements TscpMvne {
     email.setNotificationCategory(NotificationCategory.INFO);
     email.setNotificationType(NotificationType.EMAIL);
     email.setCustId(customer.getId());
-    NotificationSender notificationSender = new NotificationSender(email);
-    notificationSender.send();
+    NotificationSender notificationSender = new NotificationSender();
+    notificationSender.send(email);
   }
 
   /**
@@ -1697,7 +1687,7 @@ public class TruConnect implements TscpMvne {
         logger.info("Updating service instances for account " + account.getAccountno());
         for (ServiceInstance serviceInstance : loadedAccount.getServiceinstancelist()) {
           logger.info("Updating threshold value and Network status for ServiceInstance " + serviceInstance.getExternalId()
-              + " to " + BillingSystem.SERVICE_INSTANCE_HOTLINED);
+              + " to " + Provision.SERVICE.HOTLINE);
           // billingImpl.updateServiceInstanceStatus(serviceInstance,
           // BillingSystem.SERVICE_INSTANCE_FAILED_PMT);
           if (deviceInfoList != null && deviceInfoList.size() > 0) {
@@ -1780,8 +1770,8 @@ public class TruConnect implements TscpMvne {
       }
     }
 
-    logger.info("Updating Billing System with Hotlined Status " + BillingSystem.SERVICE_INSTANCE_HOTLINED);
-    billingSystem.updateServiceInstanceStatus(serviceInstance, BillingSystem.SERVICE_INSTANCE_HOTLINED);
+    logger.info("Updating Billing System with Hotlined Status " + Provision.SERVICE.HOTLINE);
+    billingSystem.updateServiceInstanceStatus(serviceInstance, Provision.SERVICE.HOTLINE);
 
     if (deviceInfo != null) {
       logger.info("updating deviceInfo[" + deviceInfo.getDeviceId() + "] to RX - "
