@@ -61,7 +61,7 @@ public class BillingSystem {
   private static void loadDefaults() {
     try {
       props.clear();
-      props.load(BillingSystem.class.getClassLoader().getResourceAsStream(Config.billingFile));
+      props.load(BillingSystem.class.getClassLoader().getResourceAsStream(Config.provisionFile));
     } catch (IOException ioe) {
       ioe.printStackTrace();
     }

@@ -1,8 +1,10 @@
 package com.tscp.mvne.network;
 
+import java.net.NetworkInterface;
 import java.util.Iterator;
 import java.util.List;
 
+import com.tscp.mvne.config.Device;
 import com.tscp.mvne.network.exception.NetworkException;
 import com.tscp.mvne.network.service.NetworkServiceProvider;
 import com.tscp.mvno.webservices.API3;
@@ -241,12 +243,12 @@ public class NetworkSystem {
       esn = esn.trim();
       NetworkInfo networkinfo = new NetworkInfo();
       switch (esn.length()) {
-      case NetworkInterface.ESN_HEX_LENGTH:
-      case NetworkInterface.MEID_HEX_LENGTH:
+      case Device.ESN_HEX:
+      case Device.MEID_HEX:
         networkinfo.setEsnmeidhex(esn);
         break;
-      case NetworkInterface.ESN_DEC_LENGTH:
-      case NetworkInterface.MEID_DEC_LENGTH:
+      case Device.ESN_DEC:
+      case Device.MEID_DEC:
         networkinfo.setEsnmeiddec(esn);
         break;
       default:
@@ -403,13 +405,13 @@ public class NetworkSystem {
     String newEsn = "";
     if (newNetworkInfo.getEsnmeiddec() != null) {
       newEsn = newNetworkInfo.getEsnmeiddec();
-      if (newEsn.length() != NetworkInterface.ESN_DEC_LENGTH && newEsn.length() != NetworkInterface.MEID_DEC_LENGTH) {
+      if (newEsn.length() != Device.ESN_DEC && newEsn.length() != Device.MEID_DEC) {
         throw new NetworkException("Dec ESN is not of a valid length");
       }
     }
     if (newNetworkInfo.getEsnmeidhex() != null) {
       newEsn = newNetworkInfo.getEsnmeidhex();
-      if (newEsn.length() != NetworkInterface.ESN_HEX_LENGTH && newEsn.length() != NetworkInterface.MEID_HEX_LENGTH) {
+      if (newEsn.length() != Device.ESN_HEX && newEsn.length() != Device.MEID_HEX) {
         throw new NetworkException("Hex ESN is not of a valid length");
       }
     }
