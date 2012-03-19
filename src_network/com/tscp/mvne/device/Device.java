@@ -26,7 +26,7 @@ public class Device implements Serializable {
   private DeviceAssociation association;
 
   public Device() {
-    setDeviceStatus(DeviceStatus.DESC_UNKNOWN);
+    setStatus(DeviceStatus.DESC_UNKNOWN);
     setStatusId(DeviceStatus.ID_UNKNOWN);
   }
 
@@ -78,11 +78,11 @@ public class Device implements Serializable {
     this.statusId = statusId;
   }
 
-  public String getDeviceStatus() {
+  public String getStatus() {
     return status;
   }
 
-  public void setDeviceStatus(String status) {
+  public void setStatus(String status) {
     this.status = status;
   }
 
