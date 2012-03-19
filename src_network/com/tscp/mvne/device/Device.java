@@ -1,4 +1,4 @@
-package com.tscp.mvne.customer.dao;
+package com.tscp.mvne.device;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -8,37 +8,34 @@ import org.hibernate.Query;
 import org.hibernate.classic.Session;
 
 import com.tscp.mvne.customer.DeviceException;
+import com.tscp.mvne.customer.dao.GeneralSPResponse;
 import com.tscp.mvne.hibernate.HibernateUtil;
 
-@SuppressWarnings("unchecked")
-public class DeviceInfo implements Serializable {
-  private static final long serialVersionUID = 1L;
-  private int deviceId;
+public class Device implements Serializable {
+  private static final long serialVersionUID = 4048156355651030312L;
+  private int id;
   private int custId;
+  private int statusId;
   private int accountNo;
-  private String deviceLabel;
-  private String deviceValue;
-  private int deviceStatusId;
-  private String deviceStatus;
+  private String label;
+  private String value;
+  private String status;
   private Date modDate;
   private Date effectiveDate;
   private Date expirationDate;
-  private DeviceAssociation deviceAssociation;
+  private DeviceAssociation association;
 
-  public DeviceInfo() {
+  public Device() {
     setDeviceStatus(DeviceStatus.DESC_UNKNOWN);
-    setDeviceStatusId(DeviceStatus.ID_UNKNOWN);
-    // setModDate(new Date());
-    // setEffectiveDate(new Date());
-    // setExpirationDate(new Date());
+    setStatusId(DeviceStatus.ID_UNKNOWN);
   }
 
-  public int getDeviceId() {
-    return deviceId;
+  public int getId() {
+    return id;
   }
 
-  public void setDeviceId(int deviceId) {
-    this.deviceId = deviceId;
+  public void setId(int id) {
+    this.id = id;
   }
 
   public int getCustId() {
@@ -57,36 +54,36 @@ public class DeviceInfo implements Serializable {
     this.accountNo = accountNo;
   }
 
-  public String getDeviceLabel() {
-    return deviceLabel;
+  public String getLabel() {
+    return label;
   }
 
-  public void setDeviceLabel(String deviceLabel) {
-    this.deviceLabel = deviceLabel;
+  public void setLabel(String label) {
+    this.label = label;
   }
 
-  public String getDeviceValue() {
-    return deviceValue;
+  public String getValue() {
+    return value;
   }
 
-  public void setDeviceValue(String deviceValue) {
-    this.deviceValue = deviceValue;
+  public void setValue(String value) {
+    this.value = value;
   }
 
-  public int getDeviceStatusId() {
-    return deviceStatusId;
+  public int getStatusId() {
+    return statusId;
   }
 
-  public void setDeviceStatusId(int deviceStatusId) {
-    this.deviceStatusId = deviceStatusId;
+  public void setStatusId(int statusId) {
+    this.statusId = statusId;
   }
 
   public String getDeviceStatus() {
-    return deviceStatus;
+    return status;
   }
 
-  public void setDeviceStatus(String deviceStatus) {
-    this.deviceStatus = deviceStatus;
+  public void setDeviceStatus(String status) {
+    this.status = status;
   }
 
   public Date getModDate() {
@@ -113,45 +110,26 @@ public class DeviceInfo implements Serializable {
     this.expirationDate = expirationDate;
   }
 
-  public DeviceAssociation getDeviceAssociation() {
-    return deviceAssociation;
+  public DeviceAssociation getAssociation() {
+    return association;
   }
 
-  public void setDeviceAssociation(DeviceAssociation deviceAssociation) {
-    this.deviceAssociation = deviceAssociation;
-  }
-
-  @Override
-  public String toString() {
-    StringBuffer sb = new StringBuffer();
-    sb.append("DeviceInfo Object ...");
-    sb.append(" \n");
-    sb.append("deviceId         :: " + getDeviceId());
-    sb.append(" \n");
-    sb.append("custId           :: " + getCustId());
-    sb.append(" \n");
-    sb.append("deviceLabel      :: " + getDeviceLabel());
-    sb.append(" \n");
-    sb.append("deviceValue      :: " + getDeviceValue());
-    sb.append(" \n");
-    sb.append("deviceStatus     :: " + getDeviceStatus());
-    sb.append(" \n");
-    sb.append("accountNo        :: " + getAccountNo());
-    return sb.toString();
+  public void setAssociation(DeviceAssociation association) {
+    this.association = association;
   }
 
   public void save() throws DeviceException {
     if (getCustId() <= 0) {
       throw new DeviceException("Customer Id has not been set");
     }
-    if (getDeviceLabel() == null || getDeviceLabel().isEmpty()) {
+    if (getLabel() == null || getLabel().isEmpty()) {
       throw new DeviceException("Device Label cannot be empty");
     }
     String methodName = "";
     Session session = HibernateUtil.getSessionFactory().getCurrentSession();
     session.beginTransaction();
     Query q;
-    if (getDeviceId() == 0) {
+    if (getId() == 0) {
       // Insert
       methodName = "ins_device_info";
       q = session.getNamedQuery(methodName);
@@ -160,20 +138,20 @@ public class DeviceInfo implements Serializable {
       // update
       methodName = "upd_device_info";
       q = session.getNamedQuery(methodName);
-      q.setParameter("in_device_id", getDeviceId());
-      q.setParameter("in_device_status_id", getDeviceStatusId());
+      q.setParameter("in_device_id", getId());
+      q.setParameter("in_device_status_id", getStatusId());
       q.setParameter("in_eff_date", getEffectiveDate() == null ? "" : getEffectiveDate());
       q.setParameter("in_exp_date", getExpirationDate() == null ? "" : getExpirationDate());
     }
     q.setParameter("in_cust_id", getCustId());
-    q.setParameter("in_device_label", getDeviceLabel());
-    q.setParameter("in_device_value", getDeviceValue());
+    q.setParameter("in_device_label", getLabel());
+    q.setParameter("in_device_value", getValue());
     List<GeneralSPResponse> generalSPResponseList = q.list();
 
     if (generalSPResponseList != null) {
       for (GeneralSPResponse generalSPResponse : generalSPResponseList) {
         if (generalSPResponse.getStatus().equals("Y")) {
-          setDeviceId(generalSPResponse.getMvnemsgcode());
+          setId(generalSPResponse.getMvnemsgcode());
         } else {
           session.getTransaction().rollback();
           throw new DeviceException(generalSPResponse.getMvnemsg());
@@ -189,7 +167,7 @@ public class DeviceInfo implements Serializable {
   }
 
   public void delete() {
-    if (getDeviceId() <= 0) {
+    if (getId() <= 0) {
       throw new DeviceException("Device ID cannot be empty");
     }
     Session session = HibernateUtil.getSessionFactory().getCurrentSession();
@@ -197,14 +175,14 @@ public class DeviceInfo implements Serializable {
 
     Query q = session.getNamedQuery("del_device_info");
     q.setParameter("in_cust_id", getCustId());
-    q.setParameter("in_device_id", getDeviceId());
+    q.setParameter("in_device_id", getId());
 
     List<GeneralSPResponse> generalSPResponseList = q.list();
 
     if (generalSPResponseList != null) {
       for (GeneralSPResponse generalSPResponse : generalSPResponseList) {
         if (generalSPResponse.getStatus().equals("Y")) {
-          setDeviceId(generalSPResponse.getMvnemsgcode());
+          setId(generalSPResponse.getMvnemsgcode());
         } else {
           session.getTransaction().rollback();
           throw new DeviceException(generalSPResponse.getMvnemsg());
@@ -217,4 +195,12 @@ public class DeviceInfo implements Serializable {
 
     session.getTransaction().commit();
   }
+
+  @Override
+  public String toString() {
+    return "Device [deviceId=" + id + ", custId=" + custId + ", accountNo=" + accountNo + ", deviceLabel=" + label + ", deviceValue=" + value
+        + ", deviceStatusId=" + statusId + ", deviceStatus=" + status + ", modDate=" + modDate + ", effectiveDate=" + effectiveDate + ", expirationDate="
+        + expirationDate + ", deviceAssociation=" + association + "]";
+  }
+
 }

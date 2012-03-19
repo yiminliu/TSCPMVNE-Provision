@@ -5,7 +5,7 @@
 
 <hibernate-mapping package="com.tscp.mvne.billing.dao">
 
-  <class name="com.tscp.mvne.billing.dao.UsageDetail">
+  <class name="com.tscp.mvne.billing.usage.UsageDetail">
     <id name="dateAndTime" column="date_and_time" />
     <property name="usageType" column="type" />
     <property name="rate" column="rate" />
@@ -19,7 +19,7 @@
   </class>
 
   <sql-query name="sp_fetch_charge_history" callable="true">
-    <return class="com.tscp.mvne.billing.dao.UsageDetail">
+    <return class="com.tscp.mvne.billing.usage.UsageDetail">
       <return-property name="dateAndTime" column="date_and_time" />
       <return-property name="usageType" column="type" />
       <return-property name="usageAmount" column="usage" />

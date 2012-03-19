@@ -1,4 +1,4 @@
-package com.tscp.mvne.customer.dao;
+package com.tscp.mvne.device;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -8,6 +8,7 @@ import org.hibernate.Query;
 import org.hibernate.classic.Session;
 
 import com.tscp.mvne.customer.DeviceException;
+import com.tscp.mvne.customer.dao.GeneralSPResponse;
 import com.tscp.mvne.hibernate.HibernateUtil;
 
 @SuppressWarnings("unchecked")

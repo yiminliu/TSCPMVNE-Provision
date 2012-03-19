@@ -8,6 +8,7 @@
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/WebContent/resources/logging"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src_network"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src_jms"/>
+        <wb-resource deploy-path="/WEB-INF/classes" source-path="/WebContent/resources/hibernate"/>
         <property name="context-root" value="TSCPMVNE-Production"/>
         <property name="java-output-path" value="/TSCPMVNE-Production/build/classes"/>
     </wb-module>

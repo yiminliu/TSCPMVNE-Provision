@@ -1,4 +1,4 @@
-package com.tscp.mvne.customer.dao;
+package com.tscp.mvne.device;
 
 public class DeviceStatus {
 

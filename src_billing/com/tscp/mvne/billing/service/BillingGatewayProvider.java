@@ -8,10 +8,10 @@ import javax.xml.namespace.QName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.tscp.mvne.billing.api.BillingServiceInterface;
-import com.tscp.mvne.billing.api.BillingServiceInterfaceSoap;
+import com.telscape.billingserviceinterface.BillingServiceInterface;
+import com.telscape.billingserviceinterface.BillingServiceInterfaceSoap;
 import com.tscp.mvne.config.Config;
-import com.tscp.mvne.config.Connection;
+import com.tscp.mvne.config.CONNECTION;
 import com.tscp.mvne.exception.InitializationException;
 
 /**
@@ -21,12 +21,12 @@ import com.tscp.mvne.exception.InitializationException;
  * @author Tachikoma
  * 
  */
-public final class BillingServiceProvider {
+public final class BillingGatewayProvider {
   private static final Logger logger = LoggerFactory.getLogger("TSCPMVNELogger");
   private static final BillingServiceInterface serviceInterface = loadInterface();
   private static final BillingServiceInterfaceSoap port = serviceInterface.getBillingServiceInterfaceSoap();
 
-  protected BillingServiceProvider() {
+  protected BillingGatewayProvider() {
     // prevent instantiation
   }
 
@@ -36,14 +36,14 @@ public final class BillingServiceProvider {
    * @return
    */
   protected static final BillingServiceInterface loadInterface() throws InitializationException {
-    Config.init();
+    Config.initAll();
     try {
-      URL url = new URL(Connection.billingWSDL);
-      QName qName = new QName(Connection.billingNameSpace, Connection.billingServiceName);
-      logger.info("{} has been initialized WSDL:{}", Connection.billingServiceName, Connection.billingWSDL);
+      URL url = new URL(CONNECTION.billingWSDL);
+      QName qName = new QName(CONNECTION.billingNameSpace, CONNECTION.billingServiceName);
+      logger.info("{} has been initialized WSDL:{}", CONNECTION.billingServiceName, CONNECTION.billingWSDL);
       return new BillingServiceInterface(url, qName);
     } catch (MalformedURLException url_ex) {
-      logger.error("{} failed to initialize WSDL:{}", Connection.billingServiceName, Connection.billingWSDL);
+      logger.error("{} failed to initialize WSDL:{}", CONNECTION.billingServiceName, CONNECTION.billingWSDL);
       throw new InitializationException(url_ex);
     }
   }

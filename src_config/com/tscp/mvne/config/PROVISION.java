@@ -2,7 +2,7 @@ package com.tscp.mvne.config;
 
 import com.tscp.mvne.exception.InitializationException;
 
-public final class Provision extends Config {
+public final class PROVISION extends Config {
 
   public static final class SERVICE {
     public static Integer HOTLINE;
@@ -26,7 +26,7 @@ public final class Provision extends Config {
     public static Integer INSTANCE_ID;
   }
 
-  public static final class Component {
+  public static final class COMPONENT {
     public static Integer PACKAGE_ID;
     public static Integer INSTALL;
     public static Integer REINSTALL;
@@ -42,12 +42,15 @@ public final class Provision extends Config {
       PACKAGE.EXTERNAL_ID_TYPE = Integer.parseInt(props.getProperty("package.externalId.type"));
       PACKAGE.INSTANCE_SERV_ID = Integer.parseInt(props.getProperty("package.instance.serv.id"));
       PACKAGE.INSTANCE_ID = Integer.parseInt(props.getProperty("package.instance.id"));
-      Component.PACKAGE_ID = Integer.parseInt(props.getProperty("component.package.id"));
-      Component.EXTERNAL_ID_TYPE = Integer.parseInt(props.getProperty("component.externalId.type"));
-      Component.INSTALL = Integer.parseInt(props.getProperty("component.id.install"));
-      Component.REINSTALL = Integer.parseInt(props.getProperty("component.id.reinstall"));
-      Component.SUSPEND = Integer.parseInt(props.getProperty("component.id.suspend"));
-      Component.INSTANCE_SERV_ID = Integer.parseInt(props.getProperty("component.instance.serv.id"));
+      COMPONENT.PACKAGE_ID = Integer.parseInt(props.getProperty("component.package.id"));
+      COMPONENT.EXTERNAL_ID_TYPE = Integer.parseInt(props.getProperty("component.externalId.type"));
+      COMPONENT.INSTALL = Integer.parseInt(props.getProperty("component.id.install"));
+      COMPONENT.REINSTALL = Integer.parseInt(props.getProperty("component.id.reinstall"));
+      COMPONENT.SUSPEND = Integer.parseInt(props.getProperty("component.id.suspend"));
+      COMPONENT.INSTANCE_SERV_ID = Integer.parseInt(props.getProperty("component.instance.serv.id"));
+      SERVICE.HOTLINE = Integer.parseInt(props.getProperty("service.threshold.hotline"));
+      SERVICE.RESTORE = Integer.parseInt(props.getProperty("service.threshold.restore"));
+      SERVICE.FAILED_PMT = Integer.parseInt(props.getProperty("service.threshold.failed_pmt"));
       SERVICE.CURRENCY = Integer.parseInt(props.getProperty("service.currency"));
       SERVICE.EMF_CONFIG = Integer.parseInt(props.getProperty("service.emf_config"));
       SERVICE.EXRATE_CLASS = Integer.parseInt(props.getProperty("service.exrate_class"));

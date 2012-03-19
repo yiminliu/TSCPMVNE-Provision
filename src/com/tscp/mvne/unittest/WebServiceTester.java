@@ -11,7 +11,7 @@ import com.tscp.mvne.billing.usage.UsageSummary;
 import com.tscp.mvne.customer.Customer;
 import com.tscp.mvne.customer.dao.CustAcctMapDAO;
 import com.tscp.mvne.customer.dao.CustTopUp;
-import com.tscp.mvne.customer.dao.DeviceInfo;
+import com.tscp.mvne.device.Device;
 import com.tscp.mvne.payment.PaymentException;
 import com.tscp.mvne.payment.PaymentType;
 import com.tscp.mvne.payment.dao.CreditCard;
@@ -182,10 +182,10 @@ public class WebServiceTester {
     Customer customer = new Customer();
     customer.setId(custId);
 
-    DeviceInfo deviceInfo = new DeviceInfo();
-    deviceInfo.setDeviceId(deviceId);
+    Device deviceInfo = new Device();
+    deviceInfo.setId(deviceId);
     deviceInfo.setAccountNo(accountNo);
-    deviceInfo.setDeviceValue(esn);
+    deviceInfo.setValue(esn);
 
     tc.reinstallCustomerDevice(customer, deviceInfo);
   }

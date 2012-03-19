@@ -11,21 +11,21 @@ import java.util.Locale;
 import org.hibernate.Query;
 import org.hibernate.classic.Session;
 
+import com.telscape.billingserviceinterface.BillName;
+import com.telscape.billingserviceinterface.CustAddress;
 import com.tscp.mvne.billing.Account;
 import com.tscp.mvne.billing.Component;
 import com.tscp.mvne.billing.ServiceInstance;
-import com.tscp.mvne.billing.api.BillName;
-import com.tscp.mvne.billing.api.CustAddress;
 import com.tscp.mvne.billing.usage.UsageDetail;
 import com.tscp.mvne.customer.Customer;
 import com.tscp.mvne.customer.dao.CustAcctMapDAO;
-import com.tscp.mvne.customer.dao.DeviceAssociation;
-import com.tscp.mvne.customer.dao.DeviceInfo;
-import com.tscp.mvne.customer.dao.DeviceStatus;
 import com.tscp.mvne.customer.dao.GeneralSPResponse;
+import com.tscp.mvne.device.Device;
+import com.tscp.mvne.device.DeviceAssociation;
+import com.tscp.mvne.device.DeviceStatus;
 import com.tscp.mvne.hibernate.HibernateUtil;
-import com.tscp.mvne.network.NetworkSystem;
 import com.tscp.mvne.network.NetworkInfo;
+import com.tscp.mvne.network.NetworkSystem;
 import com.tscp.mvne.payment.PaymentInformation;
 import com.tscp.mvne.payment.PaymentType;
 import com.tscp.mvne.payment.dao.CreditCard;
@@ -42,8 +42,6 @@ public class DAOTester {
       SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy");
       DecimalFormat df = new DecimalFormat("0.00", DecimalFormatSymbols.getInstance(Locale.JAPAN));
       // Currency currency = Currency.getInstance("USD");
-      // // Curre
-      // currency.
       String myTestString = "CID540T2010722134600auto";
       System.out.println("contains test " + myTestString.contains("AUTO"));
       String topUpAmount = "10.00";
@@ -215,10 +213,10 @@ public class DAOTester {
     // Session session = HibernateUtil.getSessionFactory().getCurrentSession();
 
     // session.beginTransaction();
-    DeviceInfo deviceInfo = new DeviceInfo();
+    Device deviceInfo = new Device();
     deviceInfo.setCustId(504);
-    deviceInfo.setDeviceLabel("Vincent's Test Device");
-    deviceInfo.setDeviceValue("09608582996");
+    deviceInfo.setLabel("Vincent's Test Device");
+    deviceInfo.setValue("09608582996");
     deviceInfo.save();
     // Query q = session.getNamedQuery("ins_device_info");
     // q.setParameter("in_cust_id", 504);
@@ -235,7 +233,7 @@ public class DAOTester {
     deviceAssoc.save();
   }
 
-  private List<DeviceInfo> getDeviceInfoList(int custId, int deviceId) {
+  private List<Device> getDeviceInfoList(int custId, int deviceId) {
     Session session = HibernateUtil.getSessionFactory().getCurrentSession();
     session.beginTransaction();
 
@@ -243,15 +241,15 @@ public class DAOTester {
     q.setParameter("in_cust_id", custId);
     q.setParameter("in_device_id", deviceId);
 
-    List<DeviceInfo> deviceList = q.list();
+    List<Device> deviceList = q.list();
 
     session.getTransaction().commit();
 
-    for (DeviceInfo deviceInfo : deviceList) {
-      if (deviceInfo.getDeviceId() == 1) {
-        deviceInfo.setDeviceLabel("Vincent's MiFi Device");
+    for (Device deviceInfo : deviceList) {
+      if (deviceInfo.getId() == 1) {
+        deviceInfo.setLabel("Vincent's MiFi Device");
         // deviceInfo.setDeviceStatus(DeviceStatus.DESC_ACTIVE);
-        deviceInfo.setDeviceStatusId(DeviceStatus.ID_RELEASED_REMOVED);
+        deviceInfo.setStatusId(DeviceStatus.ID_RELEASED_REMOVED);
         deviceInfo.setExpirationDate(new Date());
         deviceInfo.save();
         // Customer customer = new Customer();

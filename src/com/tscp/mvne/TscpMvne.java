@@ -17,8 +17,10 @@ public interface TscpMvne {
 
   public NetworkInfo activateService(Customer customer, NetworkInfo networkinfo) throws WebServiceException;
 
+  @Deprecated
   public void suspendService(ServiceInstance serviceInstance) throws WebServiceException;
 
+  @Deprecated
   public void restoreService(ServiceInstance serviceInstance) throws WebServiceException;
 
   public void disconnectService(ServiceInstance serviceInstance) throws WebServiceException;

@@ -13,9 +13,9 @@ import com.tscp.mvne.customer.dao.CustAcctMapDAO;
 import com.tscp.mvne.customer.dao.CustAddress;
 import com.tscp.mvne.customer.dao.CustInfo;
 import com.tscp.mvne.customer.dao.CustTopUp;
-import com.tscp.mvne.customer.dao.DeviceAssociation;
-import com.tscp.mvne.customer.dao.DeviceInfo;
 import com.tscp.mvne.customer.dao.GeneralSPResponse;
+import com.tscp.mvne.device.Device;
+import com.tscp.mvne.device.DeviceAssociation;
 import com.tscp.mvne.hibernate.HibernateUtil;
 import com.tscp.mvne.payment.PaymentException;
 import com.tscp.mvne.payment.PaymentInformation;
@@ -39,7 +39,7 @@ public class Customer {
 
   List<Account> accounts;
 
-  List<DeviceInfo> deviceList;
+  List<Device> deviceList;
 
   public Customer() {
     paymentinformation = new Vector<PaymentInformation>();
@@ -163,11 +163,9 @@ public class Customer {
 
     if (spresponse != null) {
       for (GeneralSPResponse response : spresponse) {
-        System.out.println("STATUS :: " + response.getStatus() + " :: MVNEMSGCODE :: " + response.getMvnemsgcode()
-            + " :: MVNEMSG :: " + response.getMvnemsg());
+        System.out.println("STATUS :: " + response.getStatus() + " :: MVNEMSGCODE :: " + response.getMvnemsgcode() + " :: MVNEMSG :: " + response.getMvnemsg());
         if (!response.getStatus().equals("Y")) {
-          throw new CustomerException("addCustAccts", "Error adding Customer Acct Map:: " + response.getMvnemsgcode() + "::"
-              + response.getMvnemsg());
+          throw new CustomerException("addCustAccts", "Error adding Customer Acct Map:: " + response.getMvnemsgcode() + "::" + response.getMvnemsg());
         }
       }
     } else {
@@ -198,11 +196,9 @@ public class Customer {
 
     if (spresponse != null) {
       for (GeneralSPResponse response : spresponse) {
-        System.out.println("STATUS :: " + response.getStatus() + " :: MVNEMSGCODE :: " + response.getMvnemsgcode()
-            + " :: MVNEMSG :: " + response.getMvnemsg());
+        System.out.println("STATUS :: " + response.getStatus() + " :: MVNEMSGCODE :: " + response.getMvnemsgcode() + " :: MVNEMSG :: " + response.getMvnemsg());
         if (!response.getStatus().equals("Y")) {
-          throw new CustomerException("addCustAccts", "Error deleting Customer Acct Map:: " + response.getMvnemsgcode() + "::"
-              + response.getMvnemsg());
+          throw new CustomerException("addCustAccts", "Error deleting Customer Acct Map:: " + response.getMvnemsgcode() + "::" + response.getMvnemsg());
         }
       }
     } else {
@@ -228,8 +224,7 @@ public class Customer {
       if (creditcard.getAlias() == null || creditcard.getAlias().trim().length() == 0) {
         int myFirstCardNumber = Integer.parseInt(creditcard.getCreditCardNumber().substring(0, 1));
         String myAlias = " "
-            + creditcard.getCreditCardNumber().substring(creditcard.getCreditCardNumber().length() - 4,
-              creditcard.getCreditCardNumber().length());
+            + creditcard.getCreditCardNumber().substring(creditcard.getCreditCardNumber().length() - 4, creditcard.getCreditCardNumber().length());
         switch (myFirstCardNumber) {
         case 3:
           myAlias = "AMEX" + myAlias;
@@ -270,8 +265,7 @@ public class Customer {
       if (creditcard.getAlias() == null || creditcard.getAlias().trim().length() == 0) {
         int myFirstCardNumber = Integer.parseInt(creditcard.getCreditCardNumber().substring(0, 1));
         String myAlias = " "
-            + creditcard.getCreditCardNumber().substring(creditcard.getCreditCardNumber().length() - 4,
-              creditcard.getCreditCardNumber().length());
+            + creditcard.getCreditCardNumber().substring(creditcard.getCreditCardNumber().length() - 4, creditcard.getCreditCardNumber().length());
         switch (myFirstCardNumber) {
         case 3:
           myAlias = "AMEX" + myAlias;
@@ -361,8 +355,7 @@ public class Customer {
       }
     }
     if (!isValidTransaction) {
-      throw new CustomerException("deletePayment", "Invalid Request. Payment ID " + paymentId + " does not belong to cust id "
-          + getId());
+      throw new CustomerException("deletePayment", "Invalid Request. Payment ID " + paymentId + " does not belong to cust id " + getId());
     }
   }
 
@@ -446,30 +439,30 @@ public class Customer {
     custpmtmap.save();
   }
 
-  public List<DeviceInfo> getDeviceList() {
+  public List<Device> getDeviceList() {
     return deviceList;
   }
 
-  public void setDeviceList(List<DeviceInfo> deviceList) {
+  public void setDeviceList(List<Device> deviceList) {
     this.deviceList = deviceList;
   }
 
-  public List<DeviceInfo> retrieveDeviceList() {
+  public List<Device> retrieveDeviceList() {
     return retrieveDeviceList(0, 0);
   }
 
-  public List<DeviceInfo> retrieveDeviceList(int accountNo) {
+  public List<Device> retrieveDeviceList(int accountNo) {
     return retrieveDeviceList(0, accountNo);
   }
 
-  public List<DeviceInfo> retrieveDeviceList(int deviceId, int accountNo) {
+  public List<Device> retrieveDeviceList(int deviceId, int accountNo) {
     Session session = HibernateUtil.getSessionFactory().getCurrentSession();
     session.beginTransaction();
     Query q = session.getNamedQuery("fetch_device_info");
     q.setParameter("in_cust_id", getId());
     q.setParameter("in_device_id", deviceId);
     q.setParameter("in_account_no", accountNo);
-    List<DeviceInfo> deviceInfoList = q.list();
+    List<Device> deviceInfoList = q.list();
     setDeviceList(deviceInfoList);
     session.getTransaction().rollback();
     return getDeviceList();

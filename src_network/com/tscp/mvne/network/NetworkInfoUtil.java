@@ -26,8 +26,13 @@ public class NetworkInfoUtil {
     return list == null || list.isEmpty();
   }
 
-  public static void setNetworkInfo(NetworkInfo networkInfo, ApiResellerSubInquiryResponseHolder subscription)
-      throws NetworkException {
+  public static final void checkNetworkInfoMatch(NetworkInfo n1, NetworkInfo n2) throws NetworkException {
+    if (!n1.getMdn().equals(n2.getMdn())) {
+      throw new NetworkException("MDN for both NetworkInfo objects do not match");
+    }
+  }
+
+  public static void setNetworkInfo(NetworkInfo networkInfo, ApiResellerSubInquiryResponseHolder subscription) throws NetworkException {
     AccessNbrAsgmSeqHolder accessNumberList = subscription.getAccessNbrAsgmList();
     if (accessNumberList != null && !isEmpty(accessNumberList.getValue())) {
       String switchStatus = accessNumberList.getValue().get(0).getSwitchStatusCd();

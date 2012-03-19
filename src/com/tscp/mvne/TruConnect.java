@@ -14,20 +14,29 @@ import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.xml.ws.WebServiceException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.telscape.billingserviceinterface.Payment;
+import com.telscape.billingserviceinterface.PaymentHolder;
+import com.telscape.billingserviceinterface.UsageHolder;
 import com.tscp.mvne.billing.Account;
 import com.tscp.mvne.billing.BillingSystem;
+import com.tscp.mvne.billing.BillingUtil;
+import com.tscp.mvne.billing.Component;
+import com.tscp.mvne.billing.Package;
 import com.tscp.mvne.billing.ServiceInstance;
-import com.tscp.mvne.billing.api.Payment;
-import com.tscp.mvne.billing.api.PaymentHolder;
-import com.tscp.mvne.billing.api.UsageHolder;
 import com.tscp.mvne.billing.exception.BillingException;
+import com.tscp.mvne.billing.exception.ProvisionException;
+import com.tscp.mvne.billing.provisioning.service.ProvisioningService;
 import com.tscp.mvne.billing.usage.UsageDetail;
 import com.tscp.mvne.billing.usage.UsageSummary;
-import com.tscp.mvne.config.Device;
-import com.tscp.mvne.config.Domain;
-import com.tscp.mvne.config.Provision;
+import com.tscp.mvne.config.DEVICE;
+import com.tscp.mvne.config.DOMAIN;
+import com.tscp.mvne.config.PROVISION;
 import com.tscp.mvne.contract.ContractService;
 import com.tscp.mvne.contract.KenanContract;
+import com.tscp.mvne.customer.CustUtil;
 import com.tscp.mvne.customer.Customer;
 import com.tscp.mvne.customer.CustomerException;
 import com.tscp.mvne.customer.DeviceException;
@@ -35,13 +44,16 @@ import com.tscp.mvne.customer.dao.CustAcctMapDAO;
 import com.tscp.mvne.customer.dao.CustAddress;
 import com.tscp.mvne.customer.dao.CustInfo;
 import com.tscp.mvne.customer.dao.CustTopUp;
-import com.tscp.mvne.customer.dao.DeviceAssociation;
-import com.tscp.mvne.customer.dao.DeviceInfo;
-import com.tscp.mvne.customer.dao.DeviceStatus;
+import com.tscp.mvne.device.Device;
+import com.tscp.mvne.device.DeviceAssociation;
+import com.tscp.mvne.device.DeviceStatus;
+import com.tscp.mvne.device.DeviceUtil;
+import com.tscp.mvne.device.service.DeviceService;
 import com.tscp.mvne.exception.MVNEException;
 import com.tscp.mvne.logger.LoggerHelper;
 import com.tscp.mvne.logger.TscpmvneLogger;
 import com.tscp.mvne.network.NetworkInfo;
+import com.tscp.mvne.network.NetworkInfoUtil;
 import com.tscp.mvne.network.NetworkSystem;
 import com.tscp.mvne.network.exception.NetworkException;
 import com.tscp.mvne.notification.EmailTemplate;
@@ -65,11 +77,14 @@ import com.tscp.mvne.refund.RefundService;
 
 @WebService
 public class TruConnect implements TscpMvne {
+  private static Logger logbackLogger = LoggerFactory.getLogger("TSCPMVNELogger");
   private static TscpmvneLogger logger;
   private NetworkSystem networkSystem;
   private BillingSystem billingSystem;
   private ContractService contractService;
   private RefundService refundService;
+  private static ProvisioningService provisionService;
+  private static DeviceService deviceService;
 
   public TruConnect() {
     init();
@@ -87,11 +102,10 @@ public class TruConnect implements TscpMvne {
         customer.retrieveDeviceList();
       }
       if (customer.getDeviceList() != null) {
-        for (DeviceInfo deviceInfo : customer.getDeviceList()) {
-          if (deviceInfo.getDeviceValue().equals(networkInfo.getEsnmeiddec())
-              || deviceInfo.getDeviceValue().equals(networkInfo.getEsnmeidhex())) {
-            logger.info("Found Device Information " + deviceInfo.getDeviceId() + " for Customer " + customer.getId() + ".");
-            deviceInfo.setDeviceStatusId(DeviceStatus.ID_ACTIVE);
+        for (Device deviceInfo : customer.getDeviceList()) {
+          if (deviceInfo.getValue().equals(networkInfo.getEsnmeiddec()) || deviceInfo.getValue().equals(networkInfo.getEsnmeidhex())) {
+            logger.info("Found Device Information " + deviceInfo.getId() + " for Customer " + customer.getId() + ".");
+            deviceInfo.setStatusId(DeviceStatus.ID_ACTIVE);
             deviceInfo.setEffectiveDate(new Date());
             deviceInfo.save();
           }
@@ -132,27 +146,27 @@ public class TruConnect implements TscpMvne {
   }
 
   @WebMethod
-  public DeviceInfo addDeviceInfoObject(Customer customer, DeviceInfo deviceInfo) {
-    LoggerHelper logHelper = new LoggerHelper("addDeviceInfoObject", customer, deviceInfo);
+  public Device addDeviceInfoObject(Customer customer, Device device) {
+    LoggerHelper logHelper = new LoggerHelper("addDeviceInfoObject", customer, device);
     if (customer == null) {
       throw new CustomerException("Customer information must be populated");
     }
-    if (deviceInfo == null) {
+    if (device == null) {
       throw new DeviceException("Device Information must be populated");
     } else {
-      if (deviceInfo.getDeviceId() != 0) {
+      if (device.getId() != 0) {
         throw new DeviceException("Cannot add a Device if the ID is already established");
       }
-      if (deviceInfo.getAccountNo() <= 0) {
+      if (device.getAccountNo() <= 0) {
         throw new DeviceException("Account Number cannot be empty");
       }
     }
-    if (customer.getId() != deviceInfo.getCustId()) {
+    if (customer.getId() != device.getCustId()) {
       throw new CustomerException("Cannot save a device to a different customer");
     }
-    deviceInfo.save();
-    logHelper.logMethodReturn(deviceInfo);
-    return deviceInfo;
+    device.save();
+    logHelper.logMethodReturn(device);
+    return device;
   }
 
   @WebMethod
@@ -166,8 +180,8 @@ public class TruConnect implements TscpMvne {
   public int applyContract(KenanContract contract) {
     LoggerHelper logHelper = new LoggerHelper("applyContract", contract);
     int contractId = contractService.applyContract(contract);
-    logger.info("Contract " + contract.getContractType() + " applied for account " + contract.getAccount().getAccountno()
-        + " on MDN " + contract.getServiceInstance().getExternalId());
+    logger.info("Contract " + contract.getContractType() + " applied for account " + contract.getAccount().getAccountno() + " on MDN "
+        + contract.getServiceInstance().getExternalId());
     logHelper.logMethodExit();
     return contractId;
   }
@@ -211,7 +225,7 @@ public class TruConnect implements TscpMvne {
     return account;
   }
 
-  private void createReinstallServiceInstance(Account account, ServiceInstance serviceInstance, DeviceInfo deviceInfo) {
+  private void createReinstallServiceInstance(Account account, ServiceInstance serviceInstance, Device deviceInfo) {
     LoggerHelper logHelper = new LoggerHelper("createReinstallServiceInstance", account, serviceInstance, deviceInfo);
     try {
       account.setServiceinstancelist(BillingSystem.getServiceInstanceList(account));
@@ -224,7 +238,7 @@ public class TruConnect implements TscpMvne {
     logger.info("adding package");
     billingSystem.addPackage(account, serviceInstance, lPackage);
     com.tscp.mvne.billing.Component componentid = new com.tscp.mvne.billing.Component();
-    componentid.setId(Provision.Component.REINSTALL);
+    componentid.setId(PROVISION.COMPONENT.REINSTALL);
     logger.info("adding Component");
     billingSystem.addComponent(account, serviceInstance, lPackage, componentid);
 
@@ -240,14 +254,14 @@ public class TruConnect implements TscpMvne {
             logger.info("Subscriber " + tempServiceInstance.getSubscriberNumber() + " found");
             logger.info("Building Device Association Mapping");
             DeviceAssociation deviceAssociation = new DeviceAssociation();
-            deviceAssociation.setDeviceId(deviceInfo.getDeviceId());
+            deviceAssociation.setDeviceId(deviceInfo.getId());
             deviceAssociation.setSubscrNo(tempServiceInstance.getSubscriberNumber());
             logger.info("Saving device association");
             deviceAssociation.save();
             //
-            if (deviceInfo.getDeviceStatusId() != DeviceStatus.ID_ACTIVE) {
-              logger.info("DeviceInfo " + deviceInfo.getDeviceId() + " is not in active status...Activating");
-              deviceInfo.setDeviceStatusId(DeviceStatus.ID_ACTIVE);
+            if (deviceInfo.getStatusId() != DeviceStatus.ID_ACTIVE) {
+              logger.info("DeviceInfo " + deviceInfo.getId() + " is not in active status...Activating");
+              deviceInfo.setStatusId(DeviceStatus.ID_ACTIVE);
               deviceInfo.setEffectiveDate(new Date());
               deviceInfo.save();
             }
@@ -309,13 +323,12 @@ public class TruConnect implements TscpMvne {
         }
 
         logger.info("Retrieving customer " + customer.getId() + "'s device list");
-        List<DeviceInfo> deviceInfoList = new Vector<DeviceInfo>();
+        List<Device> deviceInfoList = new Vector<Device>();
         deviceInfoList = customer.retrieveDeviceList();
         if (deviceInfoList != null) {
-          for (DeviceInfo deviceInfo : deviceInfoList) {
-            if (deviceInfo.getDeviceValue().equals(networkInfo.getEsnmeiddec())
-                || deviceInfo.getDeviceValue().equals(networkInfo.getEsnmeidhex())) {
-              logger.info("found device " + deviceInfo.getDeviceId() + "...");
+          for (Device deviceInfo : deviceInfoList) {
+            if (deviceInfo.getValue().equals(networkInfo.getEsnmeiddec()) || deviceInfo.getValue().equals(networkInfo.getEsnmeidhex())) {
+              logger.info("found device " + deviceInfo.getId() + "...");
               logger.info("attempting to retrieve subscr_no for EXTERNAL_ID " + serviceInstance.getExternalId());
               List<ServiceInstance> serviceInstanceList = billingSystem.getServiceInstanceList(account);
               if (serviceInstanceList != null) {
@@ -324,14 +337,14 @@ public class TruConnect implements TscpMvne {
                     logger.info("Subscriber " + si.getSubscriberNumber() + " found");
                     logger.info("Building Device Association Mapping");
                     DeviceAssociation deviceAssociation = new DeviceAssociation();
-                    deviceAssociation.setDeviceId(deviceInfo.getDeviceId());
+                    deviceAssociation.setDeviceId(deviceInfo.getId());
                     deviceAssociation.setSubscrNo(si.getSubscriberNumber());
                     logger.info("Saving device association");
                     deviceAssociation.save();
 
-                    if (deviceInfo.getDeviceStatusId() != DeviceStatus.ID_ACTIVE) {
-                      logger.info("DeviceInfo " + deviceInfo.getDeviceId() + " is not in active status...Activating");
-                      deviceInfo.setDeviceStatusId(DeviceStatus.ID_ACTIVE);
+                    if (deviceInfo.getStatusId() != DeviceStatus.ID_ACTIVE) {
+                      logger.info("DeviceInfo " + deviceInfo.getId() + " is not in active status...Activating");
+                      deviceInfo.setStatusId(DeviceStatus.ID_ACTIVE);
                       deviceInfo.setEffectiveDate(new Date());
                       deviceInfo.save();
                     }
@@ -399,28 +412,36 @@ public class TruConnect implements TscpMvne {
   }
 
   @WebMethod
-  public List<DeviceInfo> deleteDeviceInfoObject(Customer customer, DeviceInfo deviceInfo) {
+  public List<Device> deleteDeviceInfoObject(Customer customer, Device deviceInfo) {
     LoggerHelper logHelper = new LoggerHelper("deleteDeviceInfoObject", customer, deviceInfo);
     if (customer == null) {
       throw new CustomerException("Customer Information must be provided");
     }
     if (deviceInfo == null) {
       throw new DeviceException("Device information must be provided");
-    } else if (deviceInfo.getDeviceId() <= 0) {
+    } else if (deviceInfo.getId() <= 0) {
       throw new DeviceException("Invalid Device Id");
     }
     deviceInfo.delete();
     logHelper.logMethodExit();
     return customer.retrieveDeviceList();
-
   }
 
+  /**
+   * Disconnects the device from the Network only.
+   * 
+   * @param networkInfo
+   */
   @WebMethod
   public void disconnectFromNetwork(NetworkInfo networkInfo) {
     logger.info("Disconnecting from Network MDN " + networkInfo.getMdn());
     networkSystem.disconnectService(networkInfo);
   }
 
+  /**
+   * Disconnects the device from the Network and Kenan then updates the device's
+   * status.
+   */
   @Override
   @WebMethod
   public void disconnectService(ServiceInstance serviceInstance) {
@@ -464,11 +485,10 @@ public class TruConnect implements TscpMvne {
         }
         if (customer.getDeviceList() != null) {
           logger.info("Customer " + customer.getId() + " has " + customer.getDeviceList().size() + " devices.");
-          for (DeviceInfo oldDeviceInfo : customer.getDeviceList()) {
-            if (oldDeviceInfo.getDeviceValue().equals(networkinfo.getEsnmeiddec())
-                || oldDeviceInfo.getDeviceValue().equals(networkinfo.getEsnmeidhex())) {
+          for (Device oldDeviceInfo : customer.getDeviceList()) {
+            if (oldDeviceInfo.getValue().equals(networkinfo.getEsnmeiddec()) || oldDeviceInfo.getValue().equals(networkinfo.getEsnmeidhex())) {
               logger.info("old device information found...updating");
-              oldDeviceInfo.setDeviceStatusId(DeviceStatus.ID_RELEASED_REACTIVATEABLE);
+              oldDeviceInfo.setStatusId(DeviceStatus.ID_RELEASED_REACTIVATEABLE);
               oldDeviceInfo.setEffectiveDate(new Date());
               oldDeviceInfo.save();
             }
@@ -482,6 +502,12 @@ public class TruConnect implements TscpMvne {
     logHelper.logMethodExit();
   }
 
+  /**
+   * Disconnects the service in Kenan only.
+   * 
+   * @param account
+   * @param serviceInstance
+   */
   @WebMethod
   public void disconnectServiceInstanceFromKenan(Account account, ServiceInstance serviceInstance) {
     billingSystem.deleteServiceInstance(account, serviceInstance);
@@ -579,12 +605,6 @@ public class TruConnect implements TscpMvne {
     return custPaymentList;
   }
 
-  /**
-   * 
-   * @param customer
-   *          - Customer.id must be populated otherwise exception will be thrown
-   * @return
-   */
   @WebMethod
   public CustTopUp getCustTopUpAmount(Customer customer, Account account) {
     LoggerHelper logHelper = new LoggerHelper("getCustTopUpAmount", customer, account);
@@ -594,7 +614,7 @@ public class TruConnect implements TscpMvne {
   }
 
   @WebMethod
-  public List<DeviceInfo> getDeviceList(Customer customer) {
+  public List<Device> getDeviceList(Customer customer) {
     LoggerHelper logHelper = new LoggerHelper("getDeviceList", customer);
     if (customer == null || customer.getId() <= 0) {
       throw new CustomerException("Customer object must be provided");
@@ -620,11 +640,6 @@ public class TruConnect implements TscpMvne {
     return networkInfo;
   }
 
-  /**
-   * 
-   * @param customer
-   * @return
-   */
   @WebMethod
   public List<PaymentRecord> getPaymentHistory(Customer customer) {
     return customer.getPaymentHistory();
@@ -638,12 +653,6 @@ public class TruConnect implements TscpMvne {
     return networkInfo;
   }
 
-  /**
-   * 
-   * @param customer
-   * @param serviceInstance
-   * @return
-   */
   @WebMethod
   public UsageSummary getUsageSummary(Customer customer, ServiceInstance serviceInstance) {
     LoggerHelper logHelper = new LoggerHelper("getUsageSummary", serviceInstance);
@@ -676,8 +685,7 @@ public class TruConnect implements TscpMvne {
         throw new CustomerException("Error! No accounts associated with CustID " + customer.getId());
       }
       if (!validRequest) {
-        throw new CustomerException("Error! Customer " + customer.getId() + " is not associated with ServiceInstance "
-            + serviceInstance.getExternalId());
+        throw new CustomerException("Error! Customer " + customer.getId() + " is not associated with ServiceInstance " + serviceInstance.getExternalId());
       }
       UsageHolder usageHolder = billingSystem.getUnbilledUsageSummary(serviceInstance);
       if (usageHolder != null) {
@@ -689,8 +697,8 @@ public class TruConnect implements TscpMvne {
           usage.setExternalid(serviceInstance.getExternalId());
           System.out.println("Empty Status...");
         } else {
-          throw new BillingException("Error getting usage for " + serviceInstance.getExternalId() + ". "
-              + usageHolder.getStatusMessage().getStatus() + "::" + usageHolder.getStatusMessage().getMessage());
+          throw new BillingException("Error getting usage for " + serviceInstance.getExternalId() + ". " + usageHolder.getStatusMessage().getStatus() + "::"
+              + usageHolder.getStatusMessage().getMessage());
         }
       }
       // logger.exiting("TruConnect", "getUsageSummary");
@@ -710,6 +718,20 @@ public class TruConnect implements TscpMvne {
     billingSystem = new BillingSystem();
     contractService = new ContractService();
     refundService = new RefundService();
+    provisionService = new ProvisioningService();
+    deviceService = new DeviceService();
+  }
+
+  /**
+   * Reactivates the billing account in Kenan. An account is deactivated when
+   * there are no active services on Bill Run.
+   * 
+   * @param accountNumber
+   * @throws BillingException
+   */
+  @WebMethod
+  private void reactivateBillingAccount(int accountNumber) throws BillingException {
+    billingSystem.reactivateBillingAccount(accountNumber);
   }
 
   /**
@@ -727,13 +749,11 @@ public class TruConnect implements TscpMvne {
    * @throws PaymentException
    */
   @WebMethod
-  public PaymentUnitResponse makeCreditCardPayment(String sessionId, Account account, CreditCard creditCard,
-      String paymentAmount) {
+  public PaymentUnitResponse makeCreditCardPayment(String sessionId, Account account, CreditCard creditCard, String paymentAmount) {
     LoggerHelper logHelper = new LoggerHelper("makeCreditCardPayment", sessionId, account, creditCard, paymentAmount);
     if (creditCard == null) {
       logger.warn("SessionId " + sessionId + ":: CreditCard Information must be present to submit a CreditCard Payment");
-      throw new PaymentException("makeCreditCardPayment",
-          "CreditCard Information must be present to submit a CreditCard Payment");
+      throw new PaymentException("makeCreditCardPayment", "CreditCard Information must be present to submit a CreditCard Payment");
     }
     if (paymentAmount == null || paymentAmount.indexOf(".") == 0) {
       logger.warn("Invalid payment format. Payment format needs to be \"xxx.xx\" ");
@@ -741,17 +761,11 @@ public class TruConnect implements TscpMvne {
     }
     if (account == null || account.getAccountno() <= 0) {
       logger.warn("Invalid Account Object. Account must be specified when making payments...");
-      throw new BillingException("makeCreditCardPayment",
-          "Invalid Account Object. Account must be specified when making payments...");
+      throw new BillingException("makeCreditCardPayment", "Invalid Account Object. Account must be specified when making payments...");
     }
     creditCard.validate();
-    logger.info("Account "
-        + account.getAccountno()
-        + " is attempting to make a "
-        + paymentAmount
-        + " payment against Credit Card ending in "
-        + creditCard.getCreditCardNumber().subSequence(creditCard.getCreditCardNumber().length() - 4,
-          creditCard.getCreditCardNumber().length()));
+    logger.info("Account " + account.getAccountno() + " is attempting to make a " + paymentAmount + " payment against Credit Card ending in "
+        + creditCard.getCreditCardNumber().subSequence(creditCard.getCreditCardNumber().length() - 4, creditCard.getCreditCardNumber().length()));
 
     logger.info("Creating Transaction...");
     // Create Transaction
@@ -796,8 +810,7 @@ public class TruConnect implements TscpMvne {
       paymentMethod = "Discover";
       // paymentSource = "6XXX-XXXX-XXXX-";
     }
-    paymentSource += creditCard.getCreditCardNumber().substring(creditCard.getCreditCardNumber().length() - 4,
-      creditCard.getCreditCardNumber().length());
+    paymentSource += creditCard.getCreditCardNumber().substring(creditCard.getCreditCardNumber().length() - 4, creditCard.getCreditCardNumber().length());
     pmttransaction.setPaymentMethod(paymentMethod);
     pmttransaction.setPaymentSource(paymentSource);
     pmttransaction.savePaymentTransaction();
@@ -844,8 +857,7 @@ public class TruConnect implements TscpMvne {
       logger.info("Transaction information saved and payment completed for Account " + account.getAccountno() + ".");
     } else {
       logger.warn("Error posting credit card payment. :: " + response.getConfdescr() + " " + response.getAuthcode());
-      throw new PaymentException("makeCreditCardPayment", "Error posting credit card payment. :: " + response.getConfdescr()
-          + " " + response.getAuthcode());
+      throw new PaymentException("makeCreditCardPayment", "Error posting credit card payment. :: " + response.getConfdescr() + " " + response.getAuthcode());
     }
     logHelper.logMethodExit();
     return response;
@@ -867,9 +879,8 @@ public class TruConnect implements TscpMvne {
         logger.info("Updating service instances for account " + account.getAccountno());
         Account loadedAccount = billingSystem.getAccountByAccountNo(account.getAccountno());
         for (ServiceInstance serviceInstance : loadedAccount.getServiceinstancelist()) {
-          logger.info("Updating threshold value for ServiceInstance " + serviceInstance.getExternalId() + " to "
-              + Provision.SERVICE.RESTORE);
-          billingSystem.updateServiceInstanceStatus(serviceInstance, Provision.SERVICE.RESTORE);
+          logger.info("Updating threshold value for ServiceInstance " + serviceInstance.getExternalId() + " to " + PROVISION.SERVICE.RESTORE);
+          billingSystem.updateServiceInstanceStatus(serviceInstance, PROVISION.SERVICE.RESTORE);
         }
       }
       // throw new
@@ -879,8 +890,16 @@ public class TruConnect implements TscpMvne {
 
   }
 
+  /**
+   * Used to reinstate the customer's Device when it is deactivated and add the
+   * appropriate component. This will assign a new MDN to the device.
+   * 
+   * @param customer
+   * @param deviceInfo
+   * @return
+   */
   @WebMethod
-  public NetworkInfo reinstallCustomerDevice(Customer customer, DeviceInfo deviceInfo) {
+  public NetworkInfo reinstallCustomerDevice(Customer customer, Device deviceInfo) {
     LoggerHelper logHelper = new LoggerHelper("reinstallCustomerDevice", customer, deviceInfo);
     NetworkInfo networkInfo = new NetworkInfo();
     int accountNo = 0;
@@ -895,16 +914,16 @@ public class TruConnect implements TscpMvne {
         throw new CustomerException("invalid Customer object");
       }
 
-      if (deviceInfo == null || deviceInfo.getDeviceId() <= 0) {
+      if (deviceInfo == null || deviceInfo.getId() <= 0) {
         throw new DeviceException("Device Information must be provided");
       }
 
       logger.info("Retrieving device information");
-      List<DeviceInfo> deviceInfoList = customer.retrieveDeviceList(deviceInfo.getDeviceId(), 0);
+      List<Device> deviceInfoList = customer.retrieveDeviceList(deviceInfo.getId(), 0);
       if (deviceInfoList != null && deviceInfoList.size() > 0) {
-        for (DeviceInfo tempDeviceInfo : deviceInfoList) {
+        for (Device tempDeviceInfo : deviceInfoList) {
           accountNo = tempDeviceInfo.getAccountNo();
-          esn = tempDeviceInfo.getDeviceValue();
+          esn = tempDeviceInfo.getValue();
           deviceInfo = tempDeviceInfo;
         }
       } else {
@@ -914,10 +933,8 @@ public class TruConnect implements TscpMvne {
       logger.info("Verifying device...");
       networkInfo = getNetworkInfo(esn, null);
       if (networkInfo != null) {
-        if (networkInfo.getEsnmeiddec().equals(deviceInfo.getDeviceValue())
-            || networkInfo.getEsnmeidhex().equals(deviceInfo.getDeviceValue())) {
-          if (networkInfo.getStatus() != null
-              && (networkInfo.getStatus().equals(Device.ACTIVE) || networkInfo.getStatus().equals(Device.SUSPENDED))) {
+        if (networkInfo.getEsnmeiddec().equals(deviceInfo.getValue()) || networkInfo.getEsnmeidhex().equals(deviceInfo.getValue())) {
+          if (networkInfo.getStatus() != null && (networkInfo.getStatus().equals(DEVICE.ACTIVE) || networkInfo.getStatus().equals(DEVICE.SUSPENDED))) {
             throw new NetworkException("Device is currently bound to another subscriber...");
           }
         }
@@ -929,8 +946,7 @@ public class TruConnect implements TscpMvne {
       if (account != null) {
         if (account.getInactive_date() != null) {
           SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
-          throw new BillingException("Account " + accountNo + " has been closed as of "
-              + sdf.format(account.getInactive_date()));
+          throw new BillingException("Account " + accountNo + " has been closed as of " + sdf.format(account.getInactive_date()));
         }
       } else {
         throw new BillingException("Billing account " + accountNo + " could not be located.");
@@ -938,7 +954,7 @@ public class TruConnect implements TscpMvne {
       logger.info("Account " + accountNo + " is active");
 
       logger.info("Fetch old device information");
-      List<DeviceAssociation> deviceAssociationList = customer.retrieveDeviceAssociationList(deviceInfo.getDeviceId());
+      List<DeviceAssociation> deviceAssociationList = customer.retrieveDeviceAssociationList(deviceInfo.getId());
       if (deviceAssociationList != null && deviceAssociationList.size() > 0) {
         for (DeviceAssociation deviceAssociation : deviceAssociationList) {
           logger.info("Setting the externalId and lastActiveDate " + deviceAssociation.getInactiveDate());
@@ -948,8 +964,7 @@ public class TruConnect implements TscpMvne {
         }
         logger.info("Deactivated device's external id was " + externalId + "...using that as point of referenece");
       } else {
-        logger.info("No old device associations could be found for customer " + customer.getId() + " and device id "
-            + deviceInfo.getDeviceId());
+        logger.info("No old device associations could be found for customer " + customer.getId() + " and device id " + deviceInfo.getId());
       }
 
       logger.info("Calculating whether to charge MRC");
@@ -971,20 +986,20 @@ public class TruConnect implements TscpMvne {
           chargeMRC = true;
         }
       } else {
-        logger.info("Charge history could not be found for customer " + customer.getId() + ", accountNo "
-            + deviceInfo.getAccountNo() + ", externalId " + externalId);
+        logger.info("Charge history could not be found for customer " + customer.getId() + ", accountNo " + deviceInfo.getAccountNo() + ", externalId "
+            + externalId);
       }
 
       logger.info("Reserving MDN");
       networkInfo = reserveMDN();
-      switch (deviceInfo.getDeviceValue().length()) {
-      case Device.ESN_DEC:
-      case Device.MEID_DEC:
-        networkInfo.setEsnmeiddec(deviceInfo.getDeviceValue());
+      switch (deviceInfo.getValue().length()) {
+      case DEVICE.ESN_DEC:
+      case DEVICE.MEID_DEC:
+        networkInfo.setEsnmeiddec(deviceInfo.getValue());
         break;
-      case Device.ESN_HEX:
-      case Device.MEID_HEX:
-        networkInfo.setEsnmeidhex(deviceInfo.getDeviceValue());
+      case DEVICE.ESN_HEX:
+      case DEVICE.MEID_HEX:
+        networkInfo.setEsnmeidhex(deviceInfo.getValue());
         break;
       default:
         throw new DeviceException("Device Value is not of a valid length");
@@ -1024,6 +1039,7 @@ public class TruConnect implements TscpMvne {
     return networkInfo;
   }
 
+  @Deprecated
   @Override
   @WebMethod
   public void restoreService(ServiceInstance serviceInstance) {
@@ -1032,7 +1048,8 @@ public class TruConnect implements TscpMvne {
     logHelper.logMethodExit();
   }
 
-  private void restoreSubscriber(ServiceInstance serviceInstance, DeviceInfo deviceInfo) {
+  @Deprecated
+  private void restoreSubscriber(ServiceInstance serviceInstance, Device deviceInfo) {
     logger.info("Restoring subscriber Network, Billing and Device if present");
     Account account = new Account();
     try {
@@ -1052,7 +1069,7 @@ public class TruConnect implements TscpMvne {
       networkInfo = new NetworkInfo();
       networkInfo.setMdn(serviceInstance.getExternalId());
     }
-    if (networkInfo.getStatus() != null && networkInfo.getStatus().equals(Device.ACTIVE)) {
+    if (networkInfo.getStatus() != null && networkInfo.getStatus().equals(DEVICE.ACTIVE)) {
       logger.info("MDN " + serviceInstance.getExternalId() + " is already in a restored state");
     } else {
       logger.info("Restoring service on the network");
@@ -1060,11 +1077,11 @@ public class TruConnect implements TscpMvne {
     }
 
     logger.info("Updating Billing System with restored flag...");
-    billingSystem.updateServiceInstanceStatus(serviceInstance, Provision.SERVICE.RESTORE);
+    billingSystem.updateServiceInstanceStatus(serviceInstance, PROVISION.SERVICE.RESTORE);
 
     if (deviceInfo != null) {
-      logger.info("updating deviceInfo[" + deviceInfo.getDeviceId() + "] to AC - " + DeviceStatus.DESC_ACTIVE);
-      deviceInfo.setDeviceStatusId(DeviceStatus.ID_ACTIVE);
+      logger.info("updating deviceInfo[" + deviceInfo.getId() + "] to AC - " + DeviceStatus.DESC_ACTIVE);
+      deviceInfo.setStatusId(DeviceStatus.ID_ACTIVE);
       deviceInfo.save();
     }
     logger.info("Done restoring subscriber");
@@ -1155,15 +1172,14 @@ public class TruConnect implements TscpMvne {
     }
     assert account.getContact_email() != null : "Email is blank";
 
-    DeviceInfo deviceInfo = null;
+    Device deviceInfo = null;
     try {
       logger.info("binding device information");
-      logger.info("getting device information for CustomerId " + customer.getId() + " and account number "
-          + account.getAccountno());
-      List<DeviceInfo> deviceInfoList = customer.retrieveDeviceList(account.getAccountno());
+      logger.info("getting device information for CustomerId " + customer.getId() + " and account number " + account.getAccountno());
+      List<Device> deviceInfoList = customer.retrieveDeviceList(account.getAccountno());
       if (deviceInfoList != null) {
         logger.info("Customer has " + deviceInfoList.size() + " devices...binding to the first one...");
-        for (DeviceInfo tempDeviceInfo : deviceInfoList) {
+        for (Device tempDeviceInfo : deviceInfoList) {
           deviceInfo = tempDeviceInfo;
           logger.info(deviceInfo.toString());
           break;
@@ -1175,12 +1191,11 @@ public class TruConnect implements TscpMvne {
     } catch (Exception ex) {
       logger.warn("Error Binding device information...Using Account number instead...");
       logger.warn(ex.getMessage());
-      deviceInfo = new DeviceInfo();
-      deviceInfo.setDeviceLabel(account.getFirstname() + "'s Account " + account.getAccountno());
+      deviceInfo = new Device();
+      deviceInfo.setLabel(account.getFirstname() + "'s Account " + account.getAccountno());
     }
 
-    assert paymentTransaction != null : "Unable to send notification without a valid transaction for Customer "
-        + customer.getId() + ".";
+    assert paymentTransaction != null : "Unable to send notification without a valid transaction for Customer " + customer.getId() + ".";
 
     logger.info("Binding payment information");
     // if( customer.custpmttypes != null )
@@ -1207,7 +1222,7 @@ public class TruConnect implements TscpMvne {
     notificationParameterList.add(np);
 
     // truconnectManagesite
-    np = new NotificationParameter("truconnectManageSite", Domain.urlManage);
+    np = new NotificationParameter("truconnectManageSite", DOMAIN.urlManage);
     notificationParameterList.add(np);
 
     // recentActivitySite
@@ -1239,7 +1254,7 @@ public class TruConnect implements TscpMvne {
     notificationParameterList.add(np);
 
     // deviceLabel
-    np = new NotificationParameter("deviceLabel", deviceInfo.getDeviceLabel());
+    np = new NotificationParameter("deviceLabel", deviceInfo.getLabel());
     notificationParameterList.add(np);
 
     // pmt source
@@ -1257,12 +1272,10 @@ public class TruConnect implements TscpMvne {
     np = new NotificationParameter("quantity", df.format(quantity));
     notificationParameterList.add(np);
     // topupAmount
-    np = new NotificationParameter("topupAmount", NumberFormat.getCurrencyInstance().format(
-      Double.parseDouble(custTopUp.getTopupAmount())));
+    np = new NotificationParameter("topupAmount", NumberFormat.getCurrencyInstance().format(Double.parseDouble(custTopUp.getTopupAmount())));
     notificationParameterList.add(np);
     // total = quantity*topupAmount
-    np = new NotificationParameter("total", NumberFormat.getCurrencyInstance().format(
-      Double.parseDouble(custTopUp.getTopupAmount()) * quantity));
+    np = new NotificationParameter("total", NumberFormat.getCurrencyInstance().format(Double.parseDouble(custTopUp.getTopupAmount()) * quantity));
     notificationParameterList.add(np);
 
     // subTotal = sum(items)
@@ -1321,72 +1334,6 @@ public class TruConnect implements TscpMvne {
   }
 
   @WebMethod
-  public void sendProcessErrorNotification(Customer customer, Account account, NetworkInfo networkInfo, String mdn,
-      String action, String subject, String to, String message) {
-    // EmailNotification email = new EmailNotification();
-    // email.setFrom(notificationSystemImpl.getFrom());
-    // email.setNotificationCategory(NotificationCategory.WARNING);
-    // email.setNotificationType(NotificationType.EMAIL);
-    // email.setTemplate(EmailTemplate.truConnectProcessFailure);
-    // email.setSubject(subject);
-    // email.setCustId(customer.getId());
-    // email.setNotificationId(0);
-    // email.setTo(to);
-    //
-    // Vector<NotificationParameter> notificationParameterList = new
-    // Vector<NotificationParameter>();
-    // NotificationParameter notificationParameter = new
-    // NotificationParameter();
-    // notificationParameter.setKey("error");
-    // notificationParameter.setValue(message);
-    // notificationParameterList.add(notificationParameter);
-    //
-    // notificationParameter = new NotificationParameter();
-    // notificationParameter.setKey("userName");
-    // notificationParameter.setValue(account.getFirstname()+" "+account.getLastname());
-    // notificationParameterList.add(notificationParameter);
-    //
-    // notificationParameter = new NotificationParameter();
-    // notificationParameter.setKey("custId");
-    // notificationParameter.setValue(Integer.toString(customer.getId()));
-    // notificationParameterList.add(notificationParameter);
-    //
-    // notificationParameter = new NotificationParameter();
-    // notificationParameter.setKey("accountno");
-    // notificationParameter.setValue(Integer.toString(account.getAccountno()));
-    // notificationParameterList.add(notificationParameter);
-    //
-    // notificationParameter = new NotificationParameter();
-    // notificationParameter.setKey("mdn");
-    // notificationParameter.setValue(mdn==null?"Not Bound":mdn);
-    // notificationParameterList.add(notificationParameter);
-    //
-    // notificationParameter = new NotificationParameter();
-    // notificationParameter.setKey("esn");
-    // if( networkInfo != null ) {
-    // notificationParameter.setValue(networkInfo.getEsnmeiddec()==null?"Not Bound":networkInfo.getEsnmeiddec());
-    // } else {
-    // notificationParameter.setValue("Not Bound");
-    // }
-    // notificationParameterList.add(notificationParameter);
-    //
-    // notificationParameter = new NotificationParameter();
-    // notificationParameter.setKey("action");
-    // notificationParameter.setValue(action);
-    // notificationParameterList.add(notificationParameter);
-    //
-    // email.setNotificationParameters(notificationParameterList);
-    //
-    // NotificationSender notificationSender = new NotificationSender(email);
-    // notificationSender.run();
-    // try {
-    // notificationSender.join();
-    // } catch( InterruptedException int_ex ) {
-    //
-    // }
-  }
-
-  @WebMethod
   public void sendWelcomeNotification(Customer customer, Account account) {
     if (customer == null || customer.getId() <= 0) {
       throw new CustomerException("invalid customer object");
@@ -1394,14 +1341,12 @@ public class TruConnect implements TscpMvne {
     if (account == null || account.getAccountno() <= 0) {
       throw new BillingException("account object is invalid.");
     }
-    if (account.getFirstname() == null || account.getFirstname().trim().isEmpty() || account.getLastname() == null
-        || account.getLastname().trim().isEmpty() || account.getContact_email() == null
-        || account.getContact_email().trim().isEmpty()) {
+    if (account.getFirstname() == null || account.getFirstname().trim().isEmpty() || account.getLastname() == null || account.getLastname().trim().isEmpty()
+        || account.getContact_email() == null || account.getContact_email().trim().isEmpty()) {
       account = billingSystem.getAccountByAccountNo(account.getAccountno());
     }
-    if (account.getFirstname() == null || account.getFirstname().trim().isEmpty() || account.getLastname() == null
-        || account.getLastname().trim().isEmpty() || account.getContact_email() == null
-        || account.getContact_email().trim().isEmpty()) {
+    if (account.getFirstname() == null || account.getFirstname().trim().isEmpty() || account.getLastname() == null || account.getLastname().trim().isEmpty()
+        || account.getContact_email() == null || account.getContact_email().trim().isEmpty()) {
       throw new BillingException("account information is incorrect for account number " + account.getAccountno());
     }
 
@@ -1417,7 +1362,7 @@ public class TruConnect implements TscpMvne {
     np = new NotificationParameter("email", account.getContact_email());
     notificationParameterList.add(np);
 
-    np = new NotificationParameter("truconnectManageSite", Domain.urlManage);
+    np = new NotificationParameter("truconnectManageSite", DOMAIN.urlManage);
     notificationParameterList.add(np);
 
     EmailNotification email = new EmailNotification();
@@ -1442,14 +1387,6 @@ public class TruConnect implements TscpMvne {
     notificationSender.send(email);
   }
 
-  /**
-   * 
-   * @param customer
-   *          - Cust Id must be populated
-   * @param topUpAmount
-   *          - topup amount must be "xxx.xx" format
-   * @return
-   */
   @WebMethod
   public CustTopUp setCustTopUpAmount(Customer customer, String topUpAmount, Account account) {
     LoggerHelper logHelper = new LoggerHelper("setCustTopUpAmount", customer, topUpAmount, account);
@@ -1458,26 +1395,9 @@ public class TruConnect implements TscpMvne {
     return topUp;
   }
 
-  /**
-   * 
-   * @param sessionId
-   *          - String - identifier sent by clients
-   * @param customer
-   *          - Customer object requiring cust id value.
-   * @param paymentId
-   *          - int - payment id to be used for payment processing
-   * @param account
-   *          - Account object used to apply payment towards Kenan/Billing
-   *          System
-   * @param paymentAmount
-   *          - String - Amount to be applied in this transaction format
-   * @return
-   */
   @WebMethod
-  public PaymentUnitResponse submitPaymentByPaymentId(String sessionId, Customer customer, int paymentId, Account account,
-      String paymentAmount) {
-    LoggerHelper logHelper = new LoggerHelper("submitPaymentByPaymentId", sessionId, customer, paymentId, account,
-        paymentAmount);
+  public PaymentUnitResponse submitPaymentByPaymentId(String sessionId, Customer customer, int paymentId, Account account, String paymentAmount) {
+    LoggerHelper logHelper = new LoggerHelper("submitPaymentByPaymentId", sessionId, customer, paymentId, account, paymentAmount);
     if (customer == null || customer.getId() <= 0) {
       logger.warn("SessionId " + sessionId + "::Customer cannot be empty");
       throw new CustomerException("Customer cannot be empty");
@@ -1500,12 +1420,10 @@ public class TruConnect implements TscpMvne {
       List<CustAcctMapDAO> custAcctList = customer.getCustaccts();
       if (custAcctList == null) {
         logger.warn("No accounts found for CustomerId " + customer.getId());
-        throw new BillingException("submitPaymentByPaymentId",
-            "Invalid Account Object. Account must be specified when making payments...");
+        throw new BillingException("submitPaymentByPaymentId", "Invalid Account Object. Account must be specified when making payments...");
       } else if (custAcctList.size() != 1) {
         logger.warn("Too many accounts found for Customer " + customer.getId());
-        throw new BillingException("submitPaymentByPaymentId",
-            "Invalid Account Object. Account must be specified when making payments...");
+        throw new BillingException("submitPaymentByPaymentId", "Invalid Account Object. Account must be specified when making payments...");
       } else {
         for (CustAcctMapDAO custAcctMapDAO : custAcctList) {
           account = new Account();
@@ -1513,8 +1431,8 @@ public class TruConnect implements TscpMvne {
         }
       }
     }
-    logger.info("Customer " + customer.getId() + " and Account " + account.getAccountno() + " is attempting to make a "
-        + paymentAmount + " payment against paymentid " + paymentId);
+    logger.info("Customer " + customer.getId() + " and Account " + account.getAccountno() + " is attempting to make a " + paymentAmount
+        + " payment against paymentid " + paymentId);
 
     boolean validTransaction = false;
     String paymentMethod = "unknown";
@@ -1541,15 +1459,14 @@ public class TruConnect implements TscpMvne {
             paymentMethod = "Discover";
             // paymentSource = "6XXX-XXXX-XXXX-";
           }
-          paymentSource += creditcard.getCreditCardNumber().substring(creditcard.getCreditCardNumber().length() - 4,
-            creditcard.getCreditCardNumber().length());
+          paymentSource += creditcard.getCreditCardNumber().substring(creditcard.getCreditCardNumber().length() - 4, creditcard.getCreditCardNumber().length());
         }
       }
     }
     if (!validTransaction) {
       logger.warn("Customer " + customer.getId() + " is not authorized to make payments from Id " + paymentId);
-      throw new CustomerException("submitPaymentByPaymentId", "Customer " + customer.getId()
-          + " is not authorized to make payments from paymentId " + paymentId);
+      throw new CustomerException("submitPaymentByPaymentId", "Customer " + customer.getId() + " is not authorized to make payments from paymentId "
+          + paymentId);
     }
 
     logger.info("Creating Transaction...");
@@ -1628,8 +1545,8 @@ public class TruConnect implements TscpMvne {
 
       // get device information
       logger.info("getting device information for update");
-      DeviceInfo deviceInfo = null;
-      List<DeviceInfo> deviceInfoList = customer.retrieveDeviceList(account.getAccountno());
+      Device deviceInfo = null;
+      List<Device> deviceInfoList = customer.retrieveDeviceList(account.getAccountno());
       if (deviceInfoList != null && deviceInfoList.size() > 0) {
 
       }
@@ -1641,15 +1558,15 @@ public class TruConnect implements TscpMvne {
         // logger.info("Restoring all services on Account  threshold value for ServiceInstance "+serviceInstance.getExternalid()+" to "+BillingSystem.SERVICE_INSTANCE_RESTORED);
         // billingImpl.updateServiceInstanceStatus(serviceInstance,
         // BillingSystem.SERVICE_INSTANCE_RESTORED);
-        for (DeviceInfo tempDeviceInfo : deviceInfoList) {
+        for (Device tempDeviceInfo : deviceInfoList) {
           logger.info("Iterating through deviceInfoList");
-          List<DeviceAssociation> deviceAssociationList = customer.retrieveDeviceAssociationList(tempDeviceInfo.getDeviceId());
+          List<DeviceAssociation> deviceAssociationList = customer.retrieveDeviceAssociationList(tempDeviceInfo.getId());
           if (deviceAssociationList != null && deviceAssociationList.size() > 0) {
             logger.info("iterating through deviceAssocaitionList");
             for (DeviceAssociation deviceAssociation : deviceAssociationList) {
               if (deviceAssociation.getAccountNo() == account.getAccountno() && deviceAssociation.getInactiveDate() == null
                   && deviceAssociation.getExternalId().equals(serviceInstance.getExternalId())) {
-                logger.info("Device association found...setting device object to device id " + tempDeviceInfo.getDeviceId());
+                logger.info("Device association found...setting device object to device id " + tempDeviceInfo.getId());
                 deviceInfo = tempDeviceInfo;
                 break;
               }
@@ -1675,30 +1592,28 @@ public class TruConnect implements TscpMvne {
 
         // get device information
         logger.info("getting device information for update");
-        DeviceInfo deviceInfo = null;
-        List<DeviceInfo> deviceInfoList = customer.retrieveDeviceList(account.getAccountno());
+        Device deviceInfo = null;
+        List<Device> deviceInfoList = customer.retrieveDeviceList(account.getAccountno());
 
         // suspend services
         logger.info("Loading account information from Billing System...");
         Account loadedAccount = billingSystem.getAccountByAccountNo(account.getAccountno());
         logger.info("Updating service instances for account " + account.getAccountno());
         for (ServiceInstance serviceInstance : loadedAccount.getServiceinstancelist()) {
-          logger.info("Updating threshold value and Network status for ServiceInstance " + serviceInstance.getExternalId()
-              + " to " + Provision.SERVICE.HOTLINE);
+          logger
+              .info("Updating threshold value and Network status for ServiceInstance " + serviceInstance.getExternalId() + " to " + PROVISION.SERVICE.HOTLINE);
           // billingImpl.updateServiceInstanceStatus(serviceInstance,
           // BillingSystem.SERVICE_INSTANCE_FAILED_PMT);
           if (deviceInfoList != null && deviceInfoList.size() > 0) {
-            for (DeviceInfo tempDeviceInfo : deviceInfoList) {
+            for (Device tempDeviceInfo : deviceInfoList) {
               logger.info("Iterating through deviceInfoList");
-              List<DeviceAssociation> deviceAssociationList = customer.retrieveDeviceAssociationList(tempDeviceInfo
-                  .getDeviceId());
+              List<DeviceAssociation> deviceAssociationList = customer.retrieveDeviceAssociationList(tempDeviceInfo.getId());
               if (deviceAssociationList != null && deviceAssociationList.size() > 0) {
                 logger.info("iterating through deviceAssocaitionList");
                 for (DeviceAssociation deviceAssociation : deviceAssociationList) {
                   if (deviceAssociation.getAccountNo() == account.getAccountno() && deviceAssociation.getInactiveDate() == null
                       && deviceAssociation.getExternalId().equals(serviceInstance.getExternalId())) {
-                    logger
-                        .info("Device association found...setting device object to device id " + tempDeviceInfo.getDeviceId());
+                    logger.info("Device association found...setting device object to device id " + tempDeviceInfo.getId());
                     deviceInfo = tempDeviceInfo;
                     break;
                   }
@@ -1715,14 +1630,114 @@ public class TruConnect implements TscpMvne {
       } else {
         logger.info("No active services on this account...No need to send failed payment notification");
       }
-      throw new PaymentException("submitPaymentByPaymentId", "Error posting payment. :: " + response.getConfdescr() + " "
-          + response.getAuthcode());
+      throw new PaymentException("submitPaymentByPaymentId", "Error posting payment. :: " + response.getConfdescr() + " " + response.getAuthcode());
     }
     logHelper.logMethodExit();
     return response;
 
   }
 
+  /**
+   * Suspends the device on the Network to halt usage, adds the suspend
+   * Component in Kenan to prevent MRC and updates the account Threshold to
+   * prevent future top-ups.
+   * 
+   * @param custId
+   * @param accountNo
+   * @param deviceId
+   * @throws BillingException
+   * @throws ProvisionException
+   * @throws DeviceException
+   * @throws NetworkException
+   */
+  @WebMethod
+  public void suspendAccount(int custId, int accountNo, int deviceId) throws BillingException, ProvisionException, DeviceException, NetworkException {
+    ServiceInstance serviceInstance = provisionService.getActiveService(accountNo);
+    Component component = provisionService.getActiveComponent(accountNo, serviceInstance.getExternalId());
+
+    // check if account is already suspended in kenan
+    if (component.getId() == PROVISION.COMPONENT.SUSPEND) {
+      throw new ProvisionException("Account " + accountNo + " with MDN " + serviceInstance.getExternalId() + " is already suspended");
+    }
+
+    // check if the device matches the external ID in user's kenan account
+    Device device = deviceService.getDevice(custId, deviceId, accountNo);
+    NetworkInfo deviceNetworkInfo = getNetworkInfo(device.getValue(), null);
+    NetworkInfo accountNetworkInfo = getNetworkInfo(null, serviceInstance.getExternalId());
+    NetworkInfoUtil.checkNetworkInfoMatch(deviceNetworkInfo, accountNetworkInfo);
+
+    // load package
+    Package pkg = provisionService.getActivePackage(accountNo);
+
+    // first suspend the network to prevent further usage
+    networkSystem.suspendService(accountNetworkInfo);
+
+    // next remove component and add suspend component to prevent future MRCs
+    provisionService.removeComponent(accountNo, serviceInstance.getExternalId(), pkg.getInstanceId(), component.getInstanceId());
+    provisionService.addSingleComponent(accountNo, serviceInstance.getExternalId(), pkg.getInstanceId(), PROVISION.COMPONENT.SUSPEND);
+
+    // finally update the service threshold to prevent future top-ups
+    billingSystem.updateServiceInstanceStatus(serviceInstance, PROVISION.SERVICE.HOTLINE);
+    device.setStatusId(DeviceStatus.ID_RELEASED_SYSTEM_REACTIVATE);
+    device.save();
+  }
+
+  /**
+   * Adds the install/reinstall Component in Kenan to allow MRC, updates the
+   * Threshold to allow top-ups and then restores the device on the Network to
+   * allow usage.
+   * 
+   * @param custId
+   * @param accountNo
+   * @param deviceId
+   * @throws BillingException
+   * @throws ProvisionException
+   * @throws DeviceException
+   * @throws NetworkException
+   */
+  public void restoreAccount(int custId, int accountNo, int deviceId) throws BillingException, ProvisionException, DeviceException, NetworkException {
+    ServiceInstance serviceInstance = provisionService.getActiveService(accountNo);
+    Component component = provisionService.getActiveComponent(accountNo, serviceInstance.getExternalId());
+
+    // check if account is already active in kenan
+    if (component.getId() == PROVISION.COMPONENT.INSTALL || component.getId() == PROVISION.COMPONENT.REINSTALL) {
+      throw new ProvisionException("Account " + accountNo + " with MDN " + serviceInstance.getExternalId() + " is already active");
+    } else if (component.getId() != PROVISION.COMPONENT.SUSPEND) {
+      throw new ProvisionException("Account " + accountNo + " with MDN " + serviceInstance.getExternalId() + " is already suspended");
+    }
+
+    Device device = deviceService.getDevice(custId, deviceId, accountNo);
+    NetworkInfo deviceNetworkInfo = getNetworkInfo(device.getValue(), null);
+    NetworkInfo accountNetworkInfo = getNetworkInfo(null, serviceInstance.getExternalId());
+    NetworkInfoUtil.checkNetworkInfoMatch(deviceNetworkInfo, accountNetworkInfo);
+
+    // load package
+    Package pkg = provisionService.getActivePackage(accountNo);
+
+    // check if the user needs to be charged a pro-rated MRC for restoration
+    boolean chargeMRC;
+    try {
+      chargeMRC = BillingUtil.checkChargeMRC(accountNo, serviceInstance.getExternalId());
+    } catch (BillingException e) {
+      chargeMRC = true;
+    }
+
+    // first remove component and add active component to allow for usage
+    // tracking
+    int componentId = chargeMRC ? PROVISION.COMPONENT.INSTALL : PROVISION.COMPONENT.REINSTALL;
+    provisionService.removeComponent(accountNo, serviceInstance.getExternalId(), pkg.getInstanceId(), component.getInstanceId());
+    provisionService.addSingleComponent(accountNo, serviceInstance.getExternalId(), pkg.getInstanceId(), componentId);
+
+    // first update the service threshold to allow future top-ups
+    billingSystem.updateServiceInstanceStatus(serviceInstance, PROVISION.SERVICE.RESTORE);
+
+    // finally restore the network to allow usage
+    networkSystem.restoreService(accountNetworkInfo);
+    device.setStatusId(DeviceStatus.ID_ACTIVE);
+    device.save();
+  }
+
+  @Deprecated
   @Override
   @WebMethod
   public void suspendService(ServiceInstance serviceInstance) {
@@ -1731,7 +1746,8 @@ public class TruConnect implements TscpMvne {
     logHelper.logMethodExit();
   }
 
-  private void suspendSubscriber(ServiceInstance serviceInstance, DeviceInfo deviceInfo) {
+  @Deprecated
+  private void suspendSubscriber(ServiceInstance serviceInstance, Device deviceInfo) {
     logger.info("Suspending subscriber Network, Billing and Device if present");
     Account account = new Account();
     try {
@@ -1752,9 +1768,9 @@ public class TruConnect implements TscpMvne {
       networkInfo.setMdn(serviceInstance.getExternalId());
     } else {
       if (networkInfo.getStatus() != null) {
-        if (networkInfo.getStatus().equals(Device.SUSPENDED)) {
+        if (networkInfo.getStatus().equals(DEVICE.SUSPENDED)) {
           logger.info("Device " + networkInfo.getEsnmeiddec() + " is already suspended on the Network...skipping");
-        } else if (networkInfo.getStatus().equals(Device.ACTIVE)) {
+        } else if (networkInfo.getStatus().equals(DEVICE.ACTIVE)) {
           logger.info("Suspending Service on the Network");
           networkSystem.suspendService(networkInfo);
         } else {
@@ -1767,20 +1783,25 @@ public class TruConnect implements TscpMvne {
       }
     }
 
-    logger.info("Updating Billing System with Hotlined Status " + Provision.SERVICE.HOTLINE);
-    billingSystem.updateServiceInstanceStatus(serviceInstance, Provision.SERVICE.HOTLINE);
+    logger.info("Updating Billing System with Hotlined Status " + PROVISION.SERVICE.HOTLINE);
+    billingSystem.updateServiceInstanceStatus(serviceInstance, PROVISION.SERVICE.HOTLINE);
+
+    int accountNumber = account.getAccountno();
+    Component component = provisionService.getActiveComponent(accountNumber, serviceInstance.getExternalId());
+    Package pkg = provisionService.getActivePackage(accountNumber);
+    provisionService.removeComponent(accountNumber, serviceInstance.getExternalId(), pkg.getInstanceId(), component.getInstanceId());
+    provisionService.addComponent(accountNumber, serviceInstance.getExternalId(), pkg.getInstanceId(), PROVISION.COMPONENT.SUSPEND);
 
     if (deviceInfo != null) {
-      logger.info("updating deviceInfo[" + deviceInfo.getDeviceId() + "] to RX - "
-          + DeviceStatus.DESC_RELEASED_SYSTEM_REACTIVATE);
-      deviceInfo.setDeviceStatusId(DeviceStatus.ID_RELEASED_SYSTEM_REACTIVATE);
+      logger.info("updating deviceInfo[" + deviceInfo.getId() + "] to RX - " + DeviceStatus.DESC_RELEASED_SYSTEM_REACTIVATE);
+      deviceInfo.setStatusId(DeviceStatus.ID_RELEASED_SYSTEM_REACTIVATE);
       deviceInfo.save();
     }
     logger.info("Done suspending subscriber");
   }
 
   @WebMethod
-  public NetworkInfo swapDevice(Customer customer, NetworkInfo oldNetworkInfo, DeviceInfo newDevice) {
+  public NetworkInfo swapDevice(Customer customer, NetworkInfo oldNetworkInfo, Device newDevice) {
     LoggerHelper logHelper = new LoggerHelper("swapDevice", customer, oldNetworkInfo, newDevice);
     if (customer == null || customer.getId() <= 0) {
       throw new CustomerException("Customer object must be provided");
@@ -1788,9 +1809,9 @@ public class TruConnect implements TscpMvne {
     if (oldNetworkInfo == null || oldNetworkInfo.getMdn() == null || oldNetworkInfo.getMdn().trim().isEmpty()) {
       throw new NetworkException("Existing Network Information must be provided");
     }
-    if (newDevice == null || newDevice.getDeviceValue() == null || newDevice.getDeviceValue().trim().isEmpty()) {
+    if (newDevice == null || newDevice.getValue() == null || newDevice.getValue().trim().isEmpty()) {
       throw new DeviceException("Device Information must be specified");
-    } else if (newDevice.getDeviceId() <= 0) {
+    } else if (newDevice.getId() <= 0) {
       throw new DeviceException("Device Id must be specified");
     }
     NetworkInfo newNetworkInfo = null;
@@ -1798,33 +1819,32 @@ public class TruConnect implements TscpMvne {
       // String oldEsn = "";
       String oldMdn = oldNetworkInfo.getMdn();
       oldNetworkInfo = getNetworkInfo(null, oldMdn);
-      newNetworkInfo = getNetworkInfo(newDevice.getDeviceValue().trim(), null);
+      newNetworkInfo = getNetworkInfo(newDevice.getValue().trim(), null);
       // newNetworkInfo = getSwapNetworkInfo
 
       if (newNetworkInfo != null) {
-        if (newNetworkInfo.getEsnmeiddec().trim().equals(newDevice.getDeviceValue().trim())
-            || newNetworkInfo.getEsnmeidhex().trim().equals(newDevice.getDeviceValue().trim())) {
+        if (newNetworkInfo.getEsnmeiddec().trim().equals(newDevice.getValue().trim())
+            || newNetworkInfo.getEsnmeidhex().trim().equals(newDevice.getValue().trim())) {
           if (newNetworkInfo.getStatus() != null) {
-            if (newNetworkInfo.getStatus().equals(Device.ACTIVE)
-                || newNetworkInfo.getStatus().equals(Device.SUSPENDED)
-                || newNetworkInfo.getStatus().equals(Device.HOTLINED)) {
+            if (newNetworkInfo.getStatus().equals(DEVICE.ACTIVE) || newNetworkInfo.getStatus().equals(DEVICE.SUSPENDED)
+                || newNetworkInfo.getStatus().equals(DEVICE.HOTLINED)) {
               throw new NetworkException("Device is currently assigned");
             }
-            if (newNetworkInfo.getStatus().equals(Device.RESERVED)) {
+            if (newNetworkInfo.getStatus().equals(DEVICE.RESERVED)) {
               throw new NetworkException("Device is currently in reserve");
             }
           }
         }
       } else {
         newNetworkInfo = new NetworkInfo();
-        switch (newDevice.getDeviceValue().trim().length()) {
-        case Device.ESN_HEX:
-        case Device.MEID_HEX:
-          newNetworkInfo.setEsnmeidhex(newDevice.getDeviceValue().trim());
+        switch (newDevice.getValue().trim().length()) {
+        case DEVICE.ESN_HEX:
+        case DEVICE.MEID_HEX:
+          newNetworkInfo.setEsnmeidhex(newDevice.getValue().trim());
           break;
-        case Device.ESN_DEC:
-        case Device.MEID_DEC:
-          newNetworkInfo.setEsnmeiddec(newDevice.getDeviceValue().trim());
+        case DEVICE.ESN_DEC:
+        case DEVICE.MEID_DEC:
+          newNetworkInfo.setEsnmeiddec(newDevice.getValue().trim());
           break;
         default:
           throw new NetworkException("Invalid New Device length");
@@ -1834,7 +1854,7 @@ public class TruConnect implements TscpMvne {
 
       try {
         // Send the swap request to the network
-        logger.info("Sending swap request for MDN " + oldNetworkInfo.getMdn() + " to DEVICE " + newDevice.getDeviceValue());
+        logger.info("Sending swap request for MDN " + oldNetworkInfo.getMdn() + " to DEVICE " + newDevice.getValue());
         networkSystem.swapESN(oldNetworkInfo, newNetworkInfo);
 
         // Save deviceInfo
@@ -1861,8 +1881,7 @@ public class TruConnect implements TscpMvne {
       logger.info("updatingAccountEmailAddress(account) account object is null");
       throw new BillingException("Account object cannot be null.");
     }
-    logger.info("Updating EmailAddress for Account " + account.getAccountno() + " to email address "
-        + account.getContact_email());
+    logger.info("Updating EmailAddress for Account " + account.getAccountno() + " to email address " + account.getContact_email());
     billingSystem.updateAccountEmailAddress(account);
     logHelper.logMethodExit();
   }
@@ -1871,8 +1890,8 @@ public class TruConnect implements TscpMvne {
   public void updateContract(KenanContract contract) {
     LoggerHelper logHelper = new LoggerHelper("updateContract", contract);
     contractService.updateContract(contract);
-    logger.info("Contract " + contract.getContractType() + " updated for account " + contract.getAccount().getAccountno()
-        + " on MDN " + contract.getServiceInstance().getExternalId());
+    logger.info("Contract " + contract.getContractType() + " updated for account " + contract.getAccount().getAccountno() + " on MDN "
+        + contract.getServiceInstance().getExternalId());
     logHelper.logMethodExit();
   }
 
@@ -1944,7 +1963,7 @@ public class TruConnect implements TscpMvne {
   }
 
   @WebMethod
-  public void updateDeviceInfoObject(Customer customer, DeviceInfo deviceInfo) {
+  public void updateDeviceInfoObject(Customer customer, Device deviceInfo) {
     LoggerHelper logHelper = new LoggerHelper("updateDeviceInfoObject", customer, deviceInfo);
     if (customer == null) {
       throw new CustomerException("Customer information must be populated");
@@ -1952,7 +1971,7 @@ public class TruConnect implements TscpMvne {
     if (deviceInfo == null) {
       throw new DeviceException("Device Information must be populated");
     } else {
-      if (deviceInfo.getDeviceId() == 0) {
+      if (deviceInfo.getId() == 0) {
         throw new DeviceException("Cannot update a Device if the ID is not established");
       }
     }

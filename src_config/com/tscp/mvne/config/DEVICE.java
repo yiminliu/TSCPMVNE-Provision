@@ -9,7 +9,7 @@ import com.tscp.mvne.exception.InitializationException;
  * @author Tachikoma
  * 
  */
-public final class Device extends Config {
+public final class DEVICE extends Config {
   public static String ACTIVE;
   public static String CANCELED;
   public static String SUSPENDED;

@@ -16,65 +16,72 @@ import javax.xml.ws.WebServiceException;
 import org.hibernate.Query;
 import org.hibernate.classic.Session;
 
-import com.tscp.mvne.billing.api.ArrayOfMessageHolder;
-import com.tscp.mvne.billing.api.ArrayOfPackage;
-import com.tscp.mvne.billing.api.ArrayOfPackageHolder;
-import com.tscp.mvne.billing.api.ArrayOfPaymentHolder;
-import com.tscp.mvne.billing.api.ArrayOfPkgComponent;
-import com.tscp.mvne.billing.api.ArrayOfServiceHolder;
-import com.tscp.mvne.billing.api.ArrayOfValueHolder;
-import com.tscp.mvne.billing.api.BillName;
-import com.tscp.mvne.billing.api.BillNameHolder;
-import com.tscp.mvne.billing.api.BillingAccount;
-import com.tscp.mvne.billing.api.BillingAddressHolder;
-import com.tscp.mvne.billing.api.BillingService;
-import com.tscp.mvne.billing.api.BillingServiceInterfaceSoap;
-import com.tscp.mvne.billing.api.ContactInfo;
-import com.tscp.mvne.billing.api.ContactInfoHolder;
-import com.tscp.mvne.billing.api.CustAddress;
-import com.tscp.mvne.billing.api.CustBalanceHolder;
-import com.tscp.mvne.billing.api.MessageHolder;
-import com.tscp.mvne.billing.api.PackageHolder;
-import com.tscp.mvne.billing.api.PaymentHolder;
-import com.tscp.mvne.billing.api.PkgComponent;
-import com.tscp.mvne.billing.api.ServiceHolder;
-import com.tscp.mvne.billing.api.UsageHolder;
-import com.tscp.mvne.billing.api.ValueHolder;
+import com.telscape.billingserviceinterface.ArrayOfMessageHolder;
+import com.telscape.billingserviceinterface.ArrayOfPackage;
+import com.telscape.billingserviceinterface.ArrayOfPackageHolder;
+import com.telscape.billingserviceinterface.ArrayOfPaymentHolder;
+import com.telscape.billingserviceinterface.ArrayOfPkgComponent;
+import com.telscape.billingserviceinterface.ArrayOfServiceHolder;
+import com.telscape.billingserviceinterface.ArrayOfValueHolder;
+import com.telscape.billingserviceinterface.BillName;
+import com.telscape.billingserviceinterface.BillNameHolder;
+import com.telscape.billingserviceinterface.BillingAccount;
+import com.telscape.billingserviceinterface.BillingAddressHolder;
+import com.telscape.billingserviceinterface.BillingService;
+import com.telscape.billingserviceinterface.BillingServiceInterfaceSoap;
+import com.telscape.billingserviceinterface.ContactInfo;
+import com.telscape.billingserviceinterface.ContactInfoHolder;
+import com.telscape.billingserviceinterface.CustAddress;
+import com.telscape.billingserviceinterface.CustBalanceHolder;
+import com.telscape.billingserviceinterface.MessageHolder;
+import com.telscape.billingserviceinterface.PackageHolder;
+import com.telscape.billingserviceinterface.PaymentHolder;
+import com.telscape.billingserviceinterface.PkgComponent;
+import com.telscape.billingserviceinterface.ServiceHolder;
+import com.telscape.billingserviceinterface.UsageHolder;
+import com.telscape.billingserviceinterface.ValueHolder;
 import com.tscp.mvne.billing.exception.BillingException;
 import com.tscp.mvne.billing.exception.ProvisionException;
 import com.tscp.mvne.billing.provisioning.ProvisionUtil;
-import com.tscp.mvne.billing.service.BillingServiceProvider;
+import com.tscp.mvne.billing.service.BillingGatewayProvider;
+import com.tscp.mvne.billing.usage.UsageDetail;
 import com.tscp.mvne.config.Config;
+import com.tscp.mvne.exception.InitializationException;
 import com.tscp.mvne.hibernate.HibernateUtil;
 
+/**
+ * 1 = Port 5 = CR-D 220 = Pre-Paid
+ * 
+ * @author Tachikoma
+ * 
+ */
 public class BillingSystem {
-  // 1 = Port 5 = CR-D 220 = Pre-Paid
-  protected static short discReason = 5;
-  protected static final BillingServiceInterfaceSoap port = BillingServiceProvider.getInstance();
+  protected static short DISC_REASON = 5;
+  protected static final BillingServiceInterfaceSoap port = BillingGatewayProvider.getInstance();
   private static final String USERNAME = "TSCPMVNE.BillingSystem";
   private static Properties props = new Properties();
 
-  public BillingSystem() {
-    loadDefaults();
-  }
-
-  private static void loadDefaults() {
+  public BillingSystem() throws InitializationException {
     try {
       props.clear();
       props.load(BillingSystem.class.getClassLoader().getResourceAsStream(Config.provisionFile));
     } catch (IOException ioe) {
       ioe.printStackTrace();
+      throw new InitializationException("Unable to load " + Config.provisionFile + " while creating BillingSystem");
     }
   }
 
+  public void reactivateBillingAccount(int accountNumber) throws BillingException {
+    BillingUtil.checkAccountNumber(accountNumber);
+    port.reactivateAccount(USERNAME, Integer.toString(accountNumber));
+  }
+
   @Deprecated
-  public void addComponent(Account account, ServiceInstance serviceinstance, Package iPackage, Component componentid)
-      throws BillingException {
+  public void addComponent(Account account, ServiceInstance serviceinstance, Package iPackage, Component componentid) throws BillingException {
     if (account == null || account.getAccountno() <= 0) {
       throw new BillingException("addComponent", "Error adding service to unknown Account");
     }
-    if (serviceinstance == null || serviceinstance.getExternalId() == null
-        || serviceinstance.getExternalId().trim().length() <= 0) {
+    if (serviceinstance == null || serviceinstance.getExternalId() == null || serviceinstance.getExternalId().trim().length() <= 0) {
       throw new BillingException("addComponent", "Please include a service to be added...");
     }
     if (iPackage == null || iPackage.getInstanceId() == 0) {
@@ -108,8 +115,8 @@ public class BillingSystem {
       for (MessageHolder message : messageHolder.getMessageHolder()) {
         if (message.getStatus().equals("Success")) {
         } else {
-          throw new BillingException("addPackage", "Error adding component " + pkgComponent.getComponentId() + " to Account "
-              + account.getAccountno() + ". Returned message is " + message.getMessage());
+          throw new BillingException("addPackage", "Error adding component " + pkgComponent.getComponentId() + " to Account " + account.getAccountno()
+              + ". Returned message is " + message.getMessage());
         }
       }
     }
@@ -120,11 +127,10 @@ public class BillingSystem {
     if (account == null || account.getAccountno() <= 0) {
       throw new BillingException("addServiceInstance", "Error adding service to unknown Account");
     }
-    if (serviceinstance == null || serviceinstance.getExternalId() == null
-        || serviceinstance.getExternalId().trim().length() <= 0) {
+    if (serviceinstance == null || serviceinstance.getExternalId() == null || serviceinstance.getExternalId().trim().length() <= 0) {
       throw new BillingException("addServiceInstance", "Please include a service to be added...");
     }
-    com.tscp.mvne.billing.api.Package kenanPackage = ProvisionUtil.getDefaultBillingPackage();
+    com.telscape.billingserviceinterface.Package kenanPackage = ProvisionUtil.getDefaultBillingPackage();
 
     kenanPackage.setAccountNo(Integer.toString(account.getAccountno()));
 
@@ -148,39 +154,36 @@ public class BillingSystem {
     if (valueHolder.getValueHolder() != null && valueHolder.getValueHolder().size() > 0) {
       for (ValueHolder value : valueHolder.getValueHolder()) {
         if (value.getStatusMessage().getStatus().equals("Success")) {
-          System.out.println("Added Package " + iPackage.getId() + " :: Kenan returned ID -> " + value.getValue().trim()
-              + " with IDServ -> " + value.getValue2());
+          System.out.println("Added Package " + iPackage.getId() + " :: Kenan returned ID -> " + value.getValue().trim() + " with IDServ -> "
+              + value.getValue2());
           iPackage.setInstanceId(Integer.parseInt(value.getValue().trim()));
           iPackage.setInstanceIdServ(value.getValue2().trim());
         } else {
-          throw new BillingException("addPackage", "Error adding package " + kenanPackage.getPackageId() + " to Account "
-              + account.getAccountno() + ". Returned message is " + value.getStatusMessage().getMessage());
+          throw new BillingException("addPackage", "Error adding package " + kenanPackage.getPackageId() + " to Account " + account.getAccountno()
+              + ". Returned message is " + value.getStatusMessage().getMessage());
         }
       }
     }
   }
 
   public void addPayment(Account account, String paymentAmount) throws BillingException {
-
     String externalId = Integer.toString(account.getAccountno());
     int externalIdType = 1;
     String amount = paymentAmount;
-    XMLGregorianCalendar transDate = sysdate();
+    XMLGregorianCalendar transDate = BillingUtil.getCalendar();
     int transType = Integer.parseInt(props.getProperty("payment.trans_type"));
     String submitBy = "tcweb";
-
-    MessageHolder message = port.addPayment("api", externalId, externalIdType, amount, transDate, transType, submitBy);
+    MessageHolder message = port.addPayment(USERNAME, externalId, externalIdType, amount, transDate, transType, submitBy);
     if (message != null) {
       System.out.println("Status  :: " + message.getStatus());
       System.out.println("Message :: " + message.getMessage());
       if (!message.getStatus().equals("Success")) {
-        throw new BillingException("addPayment", "Error adding Payment $" + Double.parseDouble(paymentAmount) / 100
-            + " to Account " + account.getAccountno() + ". Return Message is :: " + message.getMessage());
+        throw new BillingException("addPayment", "Error adding Payment $" + Double.parseDouble(paymentAmount) / 100 + " to Account " + account.getAccountno()
+            + ". Return Message is :: " + message.getMessage());
       }
     } else {
       throw new BillingException("addPayment", "No Response from the Billing Unit...");
     }
-
   }
 
   @Deprecated
@@ -188,13 +191,13 @@ public class BillingSystem {
     if (account == null || account.getAccountno() <= 0) {
       throw new BillingException("addServiceInstance", "Error adding service to unknown Account");
     }
-    if (serviceinstance == null || serviceinstance.getExternalId() == null
-        || serviceinstance.getExternalId().trim().length() <= 0) {
+    if (serviceinstance == null || serviceinstance.getExternalId() == null || serviceinstance.getExternalId().trim().length() <= 0) {
       throw new BillingException("addServiceInstance", "Please include a service to be added...");
     }
     if (account.getFirstname() == null || account.getFirstname().trim().length() == 0) {
       bindAccountObject(account);
     }
+    reactivateBillingAccount(account.getAccountno());
     boolean contains = false;
     // if( account.getServiceinstancelist().contains(arg0))
     for (ServiceInstance si : account.getServiceinstancelist()) {
@@ -224,8 +227,8 @@ public class BillingSystem {
         throw new BillingException("addServiceInstance", "No response returned from foreign billing system.");
       } else {
         if (!message.getStatus().equals("Success")) {
-          throw new BillingException("addServiceInstance", "Error adding ServiceInstance " + serviceinstance.getExternalId()
-              + " to account " + account.getAccountno() + "..." + message.getMessage());
+          throw new BillingException("addServiceInstance", "Error adding ServiceInstance " + serviceinstance.getExternalId() + " to account "
+              + account.getAccountno() + "..." + message.getMessage());
         }
       }
     } else {
@@ -278,8 +281,8 @@ public class BillingSystem {
     } else {
       if (response.getValue() == null || response.getValue().trim().length() == 0) {
         if (response.getStatusMessage() != null) {
-          throw new BillingException("createAccount", "Account Number has not been returned.."
-              + response.getStatusMessage().getStatus() + " " + response.getStatusMessage().getMessage());
+          throw new BillingException("createAccount", "Account Number has not been returned.." + response.getStatusMessage().getStatus() + " "
+              + response.getStatusMessage().getMessage());
         }
         throw new BillingException("createAccount", "Account Number has not been returned..");
       } else {
@@ -291,17 +294,15 @@ public class BillingSystem {
   }
 
   public void deleteServiceInstance(Account account, ServiceInstance serviceinstance) throws BillingException {
-    System.out.println("Disconnecting Service on Account " + account.getAccountno() + " and ServiceInstance "
-        + serviceinstance.getExternalId());
+    System.out.println("Disconnecting Service on Account " + account.getAccountno() + " and ServiceInstance " + serviceinstance.getExternalId());
     if (account == null || account.getAccountno() == 0) {
       throw new BillingException("Please specify an account to delete this service against");
     }
-    if (serviceinstance == null || serviceinstance.getExternalId() == null
-        || serviceinstance.getExternalId().trim().length() == 0) {
+    if (serviceinstance == null || serviceinstance.getExternalId() == null || serviceinstance.getExternalId().trim().length() == 0) {
       throw new BillingException("deleteServiceInstance", "Please specify a service to be disconnected...");
     }
-    MessageHolder message = port.disconnectServicePackages(USERNAME, Integer.toString(account.getAccountno()), serviceinstance
-        .getExternalId(), serviceinstance.getExternalIdType(), sysdate(), discReason);
+    MessageHolder message = port.disconnectServicePackages(USERNAME, Integer.toString(account.getAccountno()), serviceinstance.getExternalId(), serviceinstance
+        .getExternalIdType(), ProvisionUtil.getCalendar(), DISC_REASON);
     // MessageHolder message = port.disconnectService(USERNAME,
     // serviceinstance.getExternalid(), serviceinstance.getExternalidtype(),
     // sysdate(), discReason);
@@ -311,12 +312,11 @@ public class BillingSystem {
       System.out.println("Status :: " + message.getStatus());
       System.out.println("Msg    :: " + message.getMessage());
       if (!message.getStatus().equals("Success")) {
-        throw new BillingException("deleteServiceInstance", "Error deleting ServiceInstance " + serviceinstance.getExternalId()
-            + " to account " + account.getAccountno() + "..." + message.getMessage());
+        throw new BillingException("deleteServiceInstance", "Error deleting ServiceInstance " + serviceinstance.getExternalId() + " to account "
+            + account.getAccountno() + "..." + message.getMessage());
       }
     }
-    System.out.println("Done Disconnecting Service on Account " + account.getAccountno() + " and ServiceInstance "
-        + serviceinstance.getExternalId());
+    System.out.println("Done Disconnecting Service on Account " + account.getAccountno() + " and ServiceInstance " + serviceinstance.getExternalId());
   }
 
   public Account getAccountByAccountNo(int account_no) throws BillingException {
@@ -363,20 +363,14 @@ public class BillingSystem {
     return account;
   }
 
-  public int getAccountNoByTN(String TN) {
-    System.out.println("Get Account by TN :: " + TN);
-    ValueHolder value = port.getAccountNo("usernmae", TN);
+  public int getAccountNoByTN(String externalId) {
+    ValueHolder value = port.getAccountNo(USERNAME, externalId);
     if (value != null) {
-      System.out.println("Status    :: " + value.getStatusMessage().getStatus());
-      System.out.println("Message   :: " + value.getStatusMessage().getMessage());
-      System.out.println("Value     :: " + value.getValue());
-      System.out.println("Value2    :: " + value.getValue2());
       if (value.getValue() != null) {
         return Integer.parseInt(value.getValue());
       }
     }
     return 0;
-
   }
 
   private static String getBalance(int accountno) {
@@ -401,8 +395,7 @@ public class BillingSystem {
 
   private BillingAccount getBillingAccountDefault() throws BillingException {
     if (props == null) {
-      throw new BillingException("getBillingAccountDefault",
-          "Default file is not bound to application...account creation not possible");
+      throw new BillingException("getBillingAccountDefault", "Default file is not bound to application...account creation not possible");
     } else {
 
       BillingAccount billingAccount = new BillingAccount();
@@ -473,8 +466,7 @@ public class BillingSystem {
 
       billingAccount.setVipCode(Short.parseShort(props.getProperty("account.vip_code")));
       try {
-        XMLGregorianCalendar value = DatatypeFactory.newInstance().newXMLGregorianCalendar(
-          new GregorianCalendar(TimeZone.getTimeZone("America/Los_Angeles")));
+        XMLGregorianCalendar value = DatatypeFactory.newInstance().newXMLGregorianCalendar(new GregorianCalendar(TimeZone.getTimeZone("America/Los_Angeles")));
         // DataTypeFactory.newXML
         billingAccount.setSysDate(value);
         billingAccount.setAccountDateActive(value);
@@ -516,13 +508,12 @@ public class BillingSystem {
     return paymentHolderList.getPaymentHolder();
   }
 
-  public List<Component> getComponentList(Account account, ServiceInstance serviceinstance, Package packageinstance)
-      throws BillingException {
+  @Deprecated
+  public List<Component> getComponentList(Account account, ServiceInstance serviceinstance, Package packageinstance) throws BillingException {
     if (account == null || account.getAccountno() <= 0) {
       throw new BillingException("getComponentList", "Account information not populated...");
     }
-    if (serviceinstance == null || serviceinstance.getExternalId() == null
-        || serviceinstance.getExternalId().trim().length() == 0) {
+    if (serviceinstance == null || serviceinstance.getExternalId() == null || serviceinstance.getExternalId().trim().length() == 0) {
       throw new BillingException("getComponentList", "Service information not populated.");
     }
     Session session = HibernateUtil.getSessionFactory().getCurrentSession();
@@ -599,6 +590,7 @@ public class BillingSystem {
     return null;
   }
 
+  @Deprecated
   public static List<Package> getPackageList(Account account, ServiceInstance serviceinstance) throws BillingException {
     if (account == null || account.getAccountno() <= 0) {
       throw new BillingException("getPackageList", "Account information not populated...");
@@ -621,8 +613,7 @@ public class BillingSystem {
         return packageList;
       }
     } catch (WebServiceException ws_ex) {
-      System.out.println("WS Exception thrown when calling getListActivePackages(\"username\"," + account.getAccountno()
-          + ")...." + ws_ex.getMessage());
+      System.out.println("WS Exception thrown when calling getListActivePackages(\"username\"," + account.getAccountno() + ")...." + ws_ex.getMessage());
       throw new BillingException("Error retrieving Package information:" + ws_ex.getMessage());
     }
 
@@ -646,6 +637,7 @@ public class BillingSystem {
     return packageList;
   }
 
+  @Deprecated
   public static List<ServiceInstance> getServiceInstanceList(Account account) throws BillingException {
     if (account == null || account.getAccountno() <= 0) {
       throw new BillingException("getServiceInstanceList", "Account information must be populated.");
@@ -664,8 +656,7 @@ public class BillingSystem {
         return serviceInstanceList;
       }
     } catch (WebServiceException ws_ex) {
-      System.out.println("WS Exception thrown when calling getActiveService(\"username\"," + account.getAccountno() + ")...."
-          + ws_ex.getMessage());
+      System.out.println("WS Exception thrown when calling getActiveService(\"username\"," + account.getAccountno() + ")...." + ws_ex.getMessage());
       throw new BillingException("Error retrieving Service Instance information:" + ws_ex.getMessage());
     }
 
@@ -693,17 +684,6 @@ public class BillingSystem {
     return usageHolder;
   }
 
-  private XMLGregorianCalendar sysdate() {
-    try {
-      XMLGregorianCalendar sysdate = DatatypeFactory.newInstance().newXMLGregorianCalendar(
-        new GregorianCalendar(TimeZone.getTimeZone("America/Los_Angeles")));
-      return sysdate;
-    } catch (DatatypeConfigurationException dce) {
-      dce.printStackTrace();
-    }
-    return null;
-  }
-
   public void updateAccount(Account account) throws BillingException {
     if (account == null || account.getAccountno() <= 0) {
       throw new BillingException("updateAccount", "Please Specify and account to update...");
@@ -711,12 +691,11 @@ public class BillingSystem {
     if (account.getContact_email() != null) {
       MessageHolder message = port.updateEmail(USERNAME, Integer.toString(account.getAccountno()), account.getContact_email());
       if (message == null) {
-        throw new BillingException("updateAccount", "Error updating account " + account.getAccountno()
-            + "...No response returned from billing system.");
+        throw new BillingException("updateAccount", "Error updating account " + account.getAccountno() + "...No response returned from billing system.");
       } else {
         if (!message.getStatus().equals("Success")) {
-          throw new BillingException("updateAccount", "Error updating email address for account " + account.getAccountno()
-              + ". Returned message is " + message.getMessage());
+          throw new BillingException("updateAccount", "Error updating email address for account " + account.getAccountno() + ". Returned message is "
+              + message.getMessage());
         }
       }
     }
@@ -729,8 +708,7 @@ public class BillingSystem {
     if (account.getContact_email() == null || account.getContact_email().trim().length() == 0) {
       throw new BillingException("Email address cannot be empty.");
     }
-    MessageHolder messageHolder = port.updateEmail("system", Integer.toString(account.getAccountno()), account
-        .getContact_email());
+    MessageHolder messageHolder = port.updateEmail("system", Integer.toString(account.getAccountno()), account.getContact_email());
     if (messageHolder != null) {
       System.out.println("Status    :: " + messageHolder.getStatus());
       System.out.println("Message   :: " + messageHolder.getMessage());
@@ -740,27 +718,27 @@ public class BillingSystem {
   }
 
   public void updateServiceInstanceStatus(ServiceInstance serviceInstance, int newThreshold) throws BillingException {
-    if (serviceInstance == null || serviceInstance.getExternalId() == null
-        || serviceInstance.getExternalId().trim().length() == 0) {
+    if (serviceInstance == null || serviceInstance.getExternalId() == null || serviceInstance.getExternalId().trim().length() == 0) {
       throw new BillingException("Valid service instance required");
     }
     if (serviceInstance.getExternalIdType() == 0) {
       throw new BillingException("Invalid External ID Type value...");
     }
-    if (newThreshold != 0 || newThreshold != 5 || newThreshold != 7) {
+    if (newThreshold != 0 && newThreshold != 5 && newThreshold != 7) {
       throw new BillingException("Invalid Threshold Value");
     }
-    MessageHolder messageHolder = port.updateThreshold(USERNAME, serviceInstance.getExternalId(), serviceInstance
-        .getExternalIdType(), Integer.toString(newThreshold));
+    MessageHolder messageHolder = port.updateThreshold(USERNAME, serviceInstance.getExternalId(), serviceInstance.getExternalIdType(), Integer
+        .toString(newThreshold));
     if (messageHolder == null) {
       throw new BillingException("No response from billing system");
     } else {
       if (!messageHolder.getStatus().equals("Success")) {
         throw new BillingException("Billing System error: " + messageHolder.getMessage());
       } else {
-        System.out.println("Service " + serviceInstance.getExternalId() + " with external_id_type "
-            + serviceInstance.getExternalIdType() + " has been updated with new threshold value of " + newThreshold);
+        System.out.println("Service " + serviceInstance.getExternalId() + " with external_id_type " + serviceInstance.getExternalIdType()
+            + " has been updated with new threshold value of " + newThreshold);
       }
     }
   }
+
 }

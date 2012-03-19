@@ -6,13 +6,17 @@ import java.util.Date;
 public class Component {
   private int id = 0;
   private int instanceId;
-  private String name;
   private int elementId;
+  private String name;
   private Date activeDate;
   private Date inactiveDate;
 
   public Component() {
     // do nothing
+  }
+
+  public Component(int id) {
+    this.id = id;
   }
 
   public int getId() {
@@ -65,8 +69,8 @@ public class Component {
 
   @Override
   public String toString() {
-    return "Component [component_id=" + id + ", component_instance_id=" + instanceId + ", component_name=" + name
-        + ", element_id=" + elementId + ", active_date=" + activeDate + ", inactive_date=" + inactiveDate + "]";
+    return "Component [component_id=" + id + ", component_instance_id=" + instanceId + ", component_name=" + name + ", element_id=" + elementId
+        + ", active_date=" + activeDate + ", inactive_date=" + inactiveDate + "]";
   }
 
 }

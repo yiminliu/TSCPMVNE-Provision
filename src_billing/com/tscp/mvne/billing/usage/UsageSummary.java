@@ -6,7 +6,7 @@ import java.util.List;
 import org.hibernate.Query;
 import org.hibernate.classic.Session;
 
-import com.tscp.mvne.billing.api.BillingUsage;
+import com.telscape.billingserviceinterface.BillingUsage;
 import com.tscp.mvne.hibernate.HibernateUtil;
 
 /**

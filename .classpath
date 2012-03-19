@@ -6,6 +6,7 @@
 	<classpathentry kind="src" path="src_network"/>
 	<classpathentry kind="src" path="src_jms"/>
 	<classpathentry kind="src" path="WebContent/resources/logging"/>
+	<classpathentry kind="src" path="WebContent/resources/hibernate"/>
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.web.container"/>
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
 	<classpathentry kind="con" path="org.eclipse.jst.server.core.container/com.sun.enterprise.jst.server.runtimeTarget/GlassFish Server Open Source Edition 3 (Java EE 6)"/>

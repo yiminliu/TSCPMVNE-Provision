@@ -102,9 +102,8 @@ public class UsageDetail implements Serializable {
 
   @Override
   public String toString() {
-    return "UsageDetail [dateAndTime=" + dateAndTime + ", usageType=" + usageType + ", rate=" + rate + ", usageAmount="
-        + usageAmount + ", dollarAmount=" + dollarAmount + ", discount=" + discount + ", startTime=" + startTime + ", endTime="
-        + endTime + ", notes=" + notes + ", balance=" + balance + "]";
+    return "UsageDetail [dateAndTime=" + dateAndTime + ", usageType=" + usageType + ", rate=" + rate + ", usageAmount=" + usageAmount + ", dollarAmount="
+        + dollarAmount + ", discount=" + discount + ", startTime=" + startTime + ", endTime=" + endTime + ", notes=" + notes + ", balance=" + balance + "]";
   }
 
 }

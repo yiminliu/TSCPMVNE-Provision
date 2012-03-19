@@ -9,7 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.tscp.mvne.config.Config;
-import com.tscp.mvne.config.Connection;
+import com.tscp.mvne.config.CONNECTION;
 import com.tscp.mvne.exception.InitializationException;
 import com.tscp.mvno.webservices.API3;
 import com.tscp.mvno.webservices.API3Service;
@@ -20,12 +20,12 @@ import com.tscp.mvno.webservices.API3Service;
  * @author Tachikoma
  * 
  */
-public final class NetworkServiceProvider {
+public final class NetworkGatewayProvider {
   private static final Logger logger = LoggerFactory.getLogger("TSCPMVNELogger");
   private static final API3Service service = loadInterface();
   private static final API3 port = service.getAPI3Port();
 
-  protected NetworkServiceProvider() {
+  protected NetworkGatewayProvider() {
     // prevent instantiation
   }
 
@@ -35,14 +35,14 @@ public final class NetworkServiceProvider {
    * @return
    */
   protected static final API3Service loadInterface() throws InitializationException {
-    Config.init();
+    Config.initAll();
     try {
-      URL url = new URL(Connection.networkWSDL);
-      QName qName = new QName(Connection.networkNameSpace, Connection.networkServiceName);
-      logger.info("{} has been initialized WSDL:{}", Connection.networkServiceName, Connection.networkWSDL);
+      URL url = new URL(CONNECTION.networkWSDL);
+      QName qName = new QName(CONNECTION.networkNameSpace, CONNECTION.networkServiceName);
+      logger.info("{} has been initialized WSDL:{}", CONNECTION.networkServiceName, CONNECTION.networkWSDL);
       return new API3Service(url, qName);
     } catch (MalformedURLException url_ex) {
-      logger.error("{} failed to initialize WSDL:{}", Connection.networkServiceName, Connection.networkWSDL);
+      logger.error("{} failed to initialize WSDL:{}", CONNECTION.networkServiceName, CONNECTION.networkWSDL);
       throw new InitializationException(url_ex);
     }
   }

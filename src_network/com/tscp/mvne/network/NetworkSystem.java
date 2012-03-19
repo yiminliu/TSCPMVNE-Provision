@@ -1,12 +1,11 @@
 package com.tscp.mvne.network;
 
-import java.net.NetworkInterface;
 import java.util.Iterator;
 import java.util.List;
 
-import com.tscp.mvne.config.Device;
+import com.tscp.mvne.config.DEVICE;
 import com.tscp.mvne.network.exception.NetworkException;
-import com.tscp.mvne.network.service.NetworkServiceProvider;
+import com.tscp.mvne.network.service.NetworkGatewayProvider;
 import com.tscp.mvno.webservices.API3;
 import com.tscp.mvno.webservices.AccessEqpAsgmInfo;
 import com.tscp.mvno.webservices.ActivateReserveSubscription;
@@ -19,7 +18,7 @@ import com.tscp.mvno.webservices.PendingSubscriptionNPA;
 import com.tscp.mvno.webservices.Sali2;
 
 public class NetworkSystem {
-  protected static final API3 port = NetworkServiceProvider.getInstance();
+  protected static final API3 port = NetworkGatewayProvider.getInstance();
 
   public NetworkSystem() {
     // do nothing
@@ -60,9 +59,8 @@ public class NetworkSystem {
       throw new NetworkException("activateMDN", "No response returned from Network Element...");
     } else {
       if (!response.getStatusMessage().equals("SUCCEED")) {
-        NetworkException networkexception = new NetworkException("activateMDN", "Error activating Device "
-            + networkinfo.getEsnmeiddec() + " against MDN " + networkinfo.getMdn() + " using MSID " + networkinfo.getMsid()
-            + "..." + response.getResponseMessage());
+        NetworkException networkexception = new NetworkException("activateMDN", "Error activating Device " + networkinfo.getEsnmeiddec() + " against MDN "
+            + networkinfo.getMdn() + " using MSID " + networkinfo.getMsid() + "..." + response.getResponseMessage());
         networkexception.setNetworkinfo(networkinfo);
         throw networkexception;
       }
@@ -85,10 +83,9 @@ public class NetworkSystem {
         throw new NetworkException("disconnectService", "Error retrieving response information from network element...");
       } else {
         if (!response.getStatusMessage().equals("SUCCEED")) {
-          NetworkException networkexception = new NetworkException("disconnectService",
-              "Error returned when disconnecting service for MDN " + networkinfo.getMdn() + " :: "
-                  + response.getApiResponseMessage() + " :: " + response.getStatusMessage() + " :: "
-                  + response.getResponseMessage());
+          NetworkException networkexception = new NetworkException("disconnectService", "Error returned when disconnecting service for MDN "
+              + networkinfo.getMdn() + " :: " + response.getApiResponseMessage() + " :: " + response.getStatusMessage() + " :: "
+              + response.getResponseMessage());
           networkexception.setNetworkinfo(networkinfo);
           throw networkexception;
         }
@@ -167,12 +164,12 @@ public class NetworkSystem {
         return networkinfo;
       } else {
         NetworkException networkexception = new NetworkException("getNetworkInfo", "Subscriber not found for "
-            + (networkinfo.getEsnmeiddec() == null || networkinfo.getEsnmeiddec().length() == 0 ? " ESN "
-                + networkinfo.getEsnmeiddec() : " MDN " + networkinfo.getMdn()));
+            + (networkinfo.getEsnmeiddec() == null || networkinfo.getEsnmeiddec().length() == 0 ? " ESN " + networkinfo.getEsnmeiddec() : " MDN "
+                + networkinfo.getMdn()));
         networkexception.setNetworkinfo(networkinfo);
         System.out.println("Subscriber not found for "
-            + (networkinfo.getEsnmeiddec() == null || networkinfo.getEsnmeiddec().length() == 0 ? " ESN "
-                + networkinfo.getEsnmeiddec() : " MDN " + networkinfo.getMdn()));
+            + (networkinfo.getEsnmeiddec() == null || networkinfo.getEsnmeiddec().length() == 0 ? " ESN " + networkinfo.getEsnmeiddec() : " MDN "
+                + networkinfo.getMdn()));
         System.out.println("DONE => Network informational query for " + (esn == null ? "MDN :: " + mdn : "ESN :: " + esn));
         throw networkexception;
       }
@@ -223,12 +220,12 @@ public class NetworkSystem {
         return networkinfo;
       } else {
         NetworkException networkexception = new NetworkException("getNetworkInfo", "Subscriber not found for "
-            + (networkinfo.getEsnmeiddec() == null || networkinfo.getEsnmeiddec().length() == 0 ? " ESN "
-                + networkinfo.getEsnmeiddec() : " MDN " + networkinfo.getMdn()));
+            + (networkinfo.getEsnmeiddec() == null || networkinfo.getEsnmeiddec().length() == 0 ? " ESN " + networkinfo.getEsnmeiddec() : " MDN "
+                + networkinfo.getMdn()));
         networkexception.setNetworkinfo(networkinfo);
         System.out.println("Subscriber not found for "
-            + (networkinfo.getEsnmeiddec() == null || networkinfo.getEsnmeiddec().length() == 0 ? " ESN "
-                + networkinfo.getEsnmeiddec() : " MDN " + networkinfo.getMdn()));
+            + (networkinfo.getEsnmeiddec() == null || networkinfo.getEsnmeiddec().length() == 0 ? " ESN " + networkinfo.getEsnmeiddec() : " MDN "
+                + networkinfo.getMdn()));
         System.out.println("DONE => Network informational query for " + (esn == null ? "MDN :: " + mdn : "ESN :: " + esn));
         throw networkexception;
       }
@@ -243,12 +240,12 @@ public class NetworkSystem {
       esn = esn.trim();
       NetworkInfo networkinfo = new NetworkInfo();
       switch (esn.length()) {
-      case Device.ESN_HEX:
-      case Device.MEID_HEX:
+      case DEVICE.ESN_HEX:
+      case DEVICE.MEID_HEX:
         networkinfo.setEsnmeidhex(esn);
         break;
-      case Device.ESN_DEC:
-      case Device.MEID_DEC:
+      case DEVICE.ESN_DEC:
+      case DEVICE.MEID_DEC:
         networkinfo.setEsnmeiddec(esn);
         break;
       default:
@@ -300,8 +297,7 @@ public class NetworkSystem {
         System.out.println("DONE => Network informational query for swapping ESN :: " + esn);
         return networkinfo;
       } else {
-        NetworkException networkexception = new NetworkException("getSwapNetworkInfo", "Subscriber not found for " + " ESN "
-            + esn);
+        NetworkException networkexception = new NetworkException("getSwapNetworkInfo", "Subscriber not found for " + " ESN " + esn);
         networkexception.setNetworkinfo(networkinfo);
         System.out.println("Subscriber not found for ESN " + esn);
         System.out.println("DONE => Network informational query for swapping ESN :: " + esn);
@@ -336,8 +332,8 @@ public class NetworkSystem {
         return networkinfo;
       } catch (NullPointerException npe) {
         throw new NetworkException("reserveMDN", "required object "
-            + (subscription.getSubNPA() == null ? subscription.getSubNPA().getMDN() == null ? subscription.getSubNPA()
-                .getMSID() == null ? npe.getMessage() : " MSID " : " MDN " : " SubNPA ") + " is null...");
+            + (subscription.getSubNPA() == null ? subscription.getSubNPA().getMDN() == null ? subscription.getSubNPA().getMSID() == null ? npe.getMessage()
+                : " MSID " : " MDN " : " SubNPA ") + " is null...");
       }
     } else {
       throw new NetworkException("reserveMDN", "returned subscription is empty...");
@@ -369,28 +365,25 @@ public class NetworkSystem {
 
   public void suspendService(NetworkInfo networkinfo) throws NetworkException {
     if (networkinfo == null) {
-      throw new NetworkException("suspendService", "Please provide a network element to be suspended...");
-    } else {
-      if (networkinfo.getMdn() == null || networkinfo.getMdn().trim().length() == 0) {
-        throw new NetworkException("suspendService", "Please provide an MDN to be suspended...");
-      }
+      throw new NetworkException("suspendService", "NetworkInfo is not set");
+    } else if (networkinfo.getMdn() == null || networkinfo.getMdn().trim().isEmpty()) {
+      throw new NetworkException("suspendService", "MDN is not set");
+    } else if (networkinfo.getStatus() == null || !networkinfo.getStatus().equals("A")) {
+      throw new NetworkException("suspendService", networkinfo.getMdn() + " is not active and cannot be suspended");
     }
-    /**
-     * this value can be HTL to hotline but we're just going for full suspend.
-     */
+    // this value can be HTL to hotline but we're just going for full suspend.
     String suspendcode = null;
     ApiGeneralResponseHolder response = port.apIsuspendSubscription(networkinfo.getMdn(), suspendcode);
     if (response == null) {
-      throw new NetworkException("suspendService", "No response returned from Network Interface...");
+      throw new NetworkException("suspendService", "No response received from Network Interface");
     } else {
-      if (!response.getStatusMessage().equals("SUCCEED")) {
-        NetworkException networkexception = new NetworkException("suspendService", "Failure to suspend " + networkinfo.getMdn()
-            + "...Message returned from Network Interface was " + response.getResponseMessage());
+      if (response.getStatusMessage() == null || !response.getStatusMessage().equals("SUCCEED")) {
+        NetworkException networkexception = new NetworkException("suspendService", "Failed to suspend MDN " + networkinfo.getMdn() + ". "
+            + response.getResponseMessage());
         networkexception.setNetworkinfo(networkinfo);
         throw networkexception;
       }
     }
-
   }
 
   public void swapESN(NetworkInfo oldNetworkInfo, NetworkInfo newNetworkInfo) throws NetworkException {
@@ -398,20 +391,20 @@ public class NetworkSystem {
       throw new NetworkException("Old network information MDN must be provided");
     }
     if (newNetworkInfo == null
-        || ((newNetworkInfo.getEsnmeiddec() == null || newNetworkInfo.getEsnmeiddec().trim().isEmpty()) && (newNetworkInfo
-            .getEsnmeidhex() == null || newNetworkInfo.getEsnmeidhex().trim().isEmpty()))) {
+        || ((newNetworkInfo.getEsnmeiddec() == null || newNetworkInfo.getEsnmeiddec().trim().isEmpty()) && (newNetworkInfo.getEsnmeidhex() == null || newNetworkInfo
+            .getEsnmeidhex().trim().isEmpty()))) {
       throw new NetworkException("New network information must be provided");
     }
     String newEsn = "";
     if (newNetworkInfo.getEsnmeiddec() != null) {
       newEsn = newNetworkInfo.getEsnmeiddec();
-      if (newEsn.length() != Device.ESN_DEC && newEsn.length() != Device.MEID_DEC) {
+      if (newEsn.length() != DEVICE.ESN_DEC && newEsn.length() != DEVICE.MEID_DEC) {
         throw new NetworkException("Dec ESN is not of a valid length");
       }
     }
     if (newNetworkInfo.getEsnmeidhex() != null) {
       newEsn = newNetworkInfo.getEsnmeidhex();
-      if (newEsn.length() != Device.ESN_HEX && newEsn.length() != Device.MEID_HEX) {
+      if (newEsn.length() != DEVICE.ESN_HEX && newEsn.length() != DEVICE.MEID_HEX) {
         throw new NetworkException("Hex ESN is not of a valid length");
       }
     }
@@ -426,13 +419,11 @@ public class NetworkSystem {
             newNetworkInfo.setMsid(responseHolder.getMSID());
           } else {
             responseHolder.setStatusMessage("FAIL");
-            throw new NetworkException("Error swapping ESN to " + newEsn + " for MDN " + oldNetworkInfo.getMdn()
-                + " MSID did not match.");
+            throw new NetworkException("Error swapping ESN to " + newEsn + " for MDN " + oldNetworkInfo.getMdn() + " MSID did not match.");
           }
         } else {
           responseHolder.setStatusMessage("FAIL");
-          throw new NetworkException("Error swapping ESN to " + newEsn + " for MDN " + oldNetworkInfo.getMdn() + "... "
-              + responseHolder.getResponseMessage());
+          throw new NetworkException("Error swapping ESN to " + newEsn + " for MDN " + oldNetworkInfo.getMdn() + "... " + responseHolder.getResponseMessage());
         }
 
         // if (responseHolder != null) {

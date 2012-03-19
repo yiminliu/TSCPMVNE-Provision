@@ -1,5 +1,6 @@
 package com.tscp.mvne.billing.provisioning.tester;
 
+import java.util.Date;
 import java.util.List;
 
 import javax.jws.WebMethod;
@@ -15,18 +16,21 @@ public class ProvisioningTester {
   private ProvisioningService service = new ProvisioningService();
 
   @WebMethod
-  public void addComponent(int accountNumber, String externalId, int componentId) {
-    service.addComponent(accountNumber, externalId, componentId);
+  public void addComponent(int accountNumber, String externalId, int packageInstance, int componentId) {
+    service.addComponent(accountNumber, externalId, packageInstance, componentId);
   }
 
   @WebMethod
-  public void addInstallComponent(int accountNumber, String externalId) {
-    service.addInstallComopnent(accountNumber, externalId);
-  }
-
-  @WebMethod
-  public void addReinstallComponent(int accountNumber, String externalId) {
-    service.addReinstallComponent(accountNumber, externalId);
+  public void addPackage(int accountNumber, int packageId) {
+    if (packageId == 0) {
+      service.addPackage(accountNumber, null);
+    } else {
+      Package pkg = new Package();
+      pkg.setAccountNumber(accountNumber);
+      pkg.setId(packageId);
+      pkg.setActiveDate(new Date());
+      service.addPackage(accountNumber, pkg);
+    }
   }
 
   @WebMethod
@@ -35,8 +39,8 @@ public class ProvisioningTester {
   }
 
   @WebMethod
-  public void addSuspendComponent(int accountNumber, String externalId) {
-    service.addSuspendComponent(accountNumber, externalId);
+  public void addSingleComponent(int accountNumber, String externalId, int packageInstance, int componentId) {
+    service.addSingleComponent(accountNumber, externalId, packageInstance, componentId);
   }
 
   @WebMethod
@@ -70,13 +74,12 @@ public class ProvisioningTester {
   }
 
   @WebMethod
-  public void removeActiveComponent(int accountNumber, String externalId) {
-    service.removeActiveComponent(accountNumber, externalId);
+  public void removeComponent(int accountNumber, String externalId, int componentInstanceId, int packageInstance) {
+    service.removeComponent(accountNumber, externalId, componentInstanceId, packageInstance);
   }
-
+  
   @WebMethod
-  public void removeComponent(int accountNumber, String externalId, int componentInstanceId) {
-    service.removeComponent(accountNumber, externalId, componentInstanceId);
+  public void removePackage(int accountNumber, int packageInstance) {
+    service.removePackage(accountNumber, packageInstance);
   }
-
 }

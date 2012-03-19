@@ -5,20 +5,20 @@
 
 <hibernate-mapping package="com.tscp.mvne.customer.dao">
 
-  <class name="com.tscp.mvne.customer.dao.DeviceInfo">
-    <id name="deviceId" column="device_id" />
+  <class name="com.tscp.mvne.device.Device">
+    <id name="id" column="device_id" />
     <property name="custId" column="cust_id" />
-    <property name="deviceLabel" column="device_label" />
-    <property name="deviceValue" column="device_value" />
-    <property name="deviceStatus" column="device_status" />
-    <property name="deviceStatusId" column="device_status_id" />
+    <property name="label" column="device_label" />
+    <property name="value" column="device_value" />
+    <property name="status" column="device_status" />
+    <property name="statusId" column="device_status_id" />
     <property name="modDate" column="mod_date" />
     <property name="effectiveDate" column="eff_date" />
     <property name="expirationDate" column="exp_date" />
     <property name="accountNo" column="account_no" />
   </class>
 
-  <class name="com.tscp.mvne.customer.dao.DeviceAssociation">
+  <class name="com.tscp.mvne.device.DeviceAssociation">
     <id name="deviceId" column="device_id" />
     <property name="subscrNo" column="subscr_no" />
     <property name="modDate" column="mod_date" />
@@ -29,13 +29,13 @@
   </class>
 
   <sql-query name="fetch_device_info" callable="true">
-    <return class="com.tscp.mvne.customer.dao.DeviceInfo">
-      <return-property name="deviceId" column="device_id" />
+    <return class="com.tscp.mvne.device.Device">
+      <return-property name="id" column="device_id" />
       <return-property name="custId" column="cust_id" />
-      <return-property name="deviceLabel" column="device_label" />
-      <return-property name="deviceValue" column="device_value" />
-      <return-property name="deviceStatus" column="device_status" />
-      <return-property name="deviceStatusId" column="device_status_id" />
+      <return-property name="label" column="device_label" />
+      <return-property name="value" column="device_value" />
+      <return-property name="status" column="device_status" />
+      <return-property name="statusId" column="device_status_id" />
       <return-property name="modDate" column="mod_date" />
       <return-property name="effectiveDate" column="eff_date" />
       <return-property name="expirationDate" column="exp_date" />
@@ -45,7 +45,7 @@
   </sql-query>
 
   <sql-query name="fetch_device_assoc_map" callable="true">
-    <return class="com.tscp.mvne.customer.dao.DeviceAssociation">
+    <return class="com.tscp.mvne.device.DeviceAssociation">
       <return-property name="deviceId" column="device_id" />
       <return-property name="subscrNo" column="subscr_no" />
       <return-property name="modDate" column="mod_date" />

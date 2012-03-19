@@ -11,25 +11,39 @@ import org.slf4j.LoggerFactory;
 import com.tscp.mvne.exception.InitializationException;
 
 public class Config {
-  public static final String serviceFile = "com/tscp/mvne/config/service.properties";
+  public static final String configFile = "com/tscp/mvne/config/config.properties";
+  public static final String connectionFile = "com/tscp/mvne/config/service.properties";
   public static final String deviceFile = "com/tscp/mvne/config/device.properties";
   public static final String domainFile = "com/tscp/mvne/config/domain.properties";
   public static final String provisionFile = "com/tscp/mvne/config/provision.properties";
   protected static final Logger logger = LoggerFactory.getLogger("TSCPMVNELogger");
   protected static Set<String> loadedFiles = new HashSet<String>();
   protected static Properties props = new Properties();
+  protected static boolean production = false;
 
   public static void init() throws InitializationException {
-    Connection.init();
-    Provision.init();
-    Device.init();
+    load(configFile);
+    if (props.getProperty("production") != null && props.getProperty("production").equals("1")) {
+      production = true;
+    } else {
+      production = false;
+    }
+  }
+
+  public static void initAll() throws InitializationException {
+    Config.init();
+    CONNECTION.init();
+    DEVICE.init();
+    DOMAIN.init();
+    PROVISION.init();
   }
 
   protected static void loadAll() throws InitializationException {
-    load(serviceFile);
+    load(configFile);
     load(deviceFile);
-    load(provisionFile);
     load(domainFile);
+    load(provisionFile);
+    load(connectionFile);
   }
 
   protected static void load(String filepath) throws InitializationException {

@@ -2,7 +2,7 @@ package com.tscp.mvne.config;
 
 import com.tscp.mvne.exception.InitializationException;
 
-public class Domain extends Config {
+public class DOMAIN extends Config {
   public static String urlSupport;
   public static String urlManage;
   public static String urlTOS;

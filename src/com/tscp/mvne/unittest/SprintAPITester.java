@@ -78,14 +78,10 @@ public class SprintAPITester {
       }
       if (subscription.getAccessNbrAsgmList() != null) {
         System.out.println("Number :: " + subscription.getAccessNbrAsgmList().getValue().get(0).getAccessNbr());
-        System.out
-            .println("Number :: " + subscription.getAccessNbrAsgmList().getValue().get(0).getAccessNbrAsgmEffDt());
-        System.out
-            .println("Number :: " + subscription.getAccessNbrAsgmList().getValue().get(0).getAccessNbrAsgmEffTm());
-        System.out.println("Number :: "
-            + subscription.getAccessNbrAsgmList().getValue().get(0).getAccessNbrAsgmExprDt());
-        System.out.println("Number :: "
-            + subscription.getAccessNbrAsgmList().getValue().get(0).getAccessNbrAsgmExprTm());
+        System.out.println("Number :: " + subscription.getAccessNbrAsgmList().getValue().get(0).getAccessNbrAsgmEffDt());
+        System.out.println("Number :: " + subscription.getAccessNbrAsgmList().getValue().get(0).getAccessNbrAsgmEffTm());
+        System.out.println("Number :: " + subscription.getAccessNbrAsgmList().getValue().get(0).getAccessNbrAsgmExprDt());
+        System.out.println("Number :: " + subscription.getAccessNbrAsgmList().getValue().get(0).getAccessNbrAsgmExprTm());
         System.out.println("Number :: " + subscription.getAccessNbrAsgmList().getValue().get(0).getMSID());
         System.out.println("Number :: " + subscription.getAccessNbrAsgmList().getValue().get(0).getSwitchStatusCd());
       }
