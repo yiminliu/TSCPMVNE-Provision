@@ -895,36 +895,36 @@ public class TruConnect implements TscpMvne {
    * appropriate component. This will assign a new MDN to the device.
    * 
    * @param customer
-   * @param deviceInfo
+   * @param device
    * @return
    */
   @WebMethod
-  public NetworkInfo reinstallCustomerDevice(Customer customer, Device deviceInfo) {
-    LoggerHelper logHelper = new LoggerHelper("reinstallCustomerDevice", customer, deviceInfo);
+  public NetworkInfo reinstallCustomerDevice(Customer customer, Device device) {
+    LoggerHelper logHelper = new LoggerHelper("reinstallCustomerDevice", customer, device);
     NetworkInfo networkInfo = new NetworkInfo();
     int accountNo = 0;
     String esn = "";
     String externalId = ""; // Old ExternalId associated with the DeviceInfo
     boolean chargeMRC = false;
     Date lastActiveDate = null;
-    // Date lastMRCDate = null;
     Date now = new Date();
+    
     try {
       if (customer == null || customer.getId() <= 0) {
         throw new CustomerException("invalid Customer object");
       }
 
-      if (deviceInfo == null || deviceInfo.getId() <= 0) {
+      if (device == null || device.getId() <= 0) {
         throw new DeviceException("Device Information must be provided");
       }
 
       logger.info("Retrieving device information");
-      List<Device> deviceInfoList = customer.retrieveDeviceList(deviceInfo.getId(), 0);
+      List<Device> deviceInfoList = customer.retrieveDeviceList(device.getId(), 0);
       if (deviceInfoList != null && deviceInfoList.size() > 0) {
         for (Device tempDeviceInfo : deviceInfoList) {
           accountNo = tempDeviceInfo.getAccountNo();
           esn = tempDeviceInfo.getValue();
-          deviceInfo = tempDeviceInfo;
+          device = tempDeviceInfo;
         }
       } else {
         throw new DeviceException("Device Information cannot be located..does it belong to customer " + customer.getId());
@@ -933,7 +933,7 @@ public class TruConnect implements TscpMvne {
       logger.info("Verifying device...");
       networkInfo = getNetworkInfo(esn, null);
       if (networkInfo != null) {
-        if (networkInfo.getEsnmeiddec().equals(deviceInfo.getValue()) || networkInfo.getEsnmeidhex().equals(deviceInfo.getValue())) {
+        if (networkInfo.getEsnmeiddec().equals(device.getValue()) || networkInfo.getEsnmeidhex().equals(device.getValue())) {
           if (networkInfo.getStatus() != null && (networkInfo.getStatus().equals(DEVICE.ACTIVE) || networkInfo.getStatus().equals(DEVICE.SUSPENDED))) {
             throw new NetworkException("Device is currently bound to another subscriber...");
           }
@@ -943,6 +943,7 @@ public class TruConnect implements TscpMvne {
 
       logger.info("make sure Kenan Account isn't closed");
       Account account = getAccountInfo(accountNo);
+      reactivateBillingAccount(accountNo);
       if (account != null) {
         if (account.getInactive_date() != null) {
           SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
@@ -954,7 +955,7 @@ public class TruConnect implements TscpMvne {
       logger.info("Account " + accountNo + " is active");
 
       logger.info("Fetch old device information");
-      List<DeviceAssociation> deviceAssociationList = customer.retrieveDeviceAssociationList(deviceInfo.getId());
+      List<DeviceAssociation> deviceAssociationList = customer.retrieveDeviceAssociationList(device.getId());
       if (deviceAssociationList != null && deviceAssociationList.size() > 0) {
         for (DeviceAssociation deviceAssociation : deviceAssociationList) {
           logger.info("Setting the externalId and lastActiveDate " + deviceAssociation.getInactiveDate());
@@ -964,7 +965,7 @@ public class TruConnect implements TscpMvne {
         }
         logger.info("Deactivated device's external id was " + externalId + "...using that as point of referenece");
       } else {
-        logger.info("No old device associations could be found for customer " + customer.getId() + " and device id " + deviceInfo.getId());
+        logger.info("No old device associations could be found for customer " + customer.getId() + " and device id " + device.getId());
       }
 
       logger.info("Calculating whether to charge MRC");
@@ -986,20 +987,20 @@ public class TruConnect implements TscpMvne {
           chargeMRC = true;
         }
       } else {
-        logger.info("Charge history could not be found for customer " + customer.getId() + ", accountNo " + deviceInfo.getAccountNo() + ", externalId "
+        logger.info("Charge history could not be found for customer " + customer.getId() + ", accountNo " + device.getAccountNo() + ", externalId "
             + externalId);
       }
 
       logger.info("Reserving MDN");
       networkInfo = reserveMDN();
-      switch (deviceInfo.getValue().length()) {
+      switch (device.getValue().length()) {
       case DEVICE.ESN_DEC:
       case DEVICE.MEID_DEC:
-        networkInfo.setEsnmeiddec(deviceInfo.getValue());
+        networkInfo.setEsnmeiddec(device.getValue());
         break;
       case DEVICE.ESN_HEX:
       case DEVICE.MEID_HEX:
-        networkInfo.setEsnmeidhex(deviceInfo.getValue());
+        networkInfo.setEsnmeidhex(device.getValue());
         break;
       default:
         throw new DeviceException("Device Value is not of a valid length");
@@ -1013,7 +1014,7 @@ public class TruConnect implements TscpMvne {
 
       logger.info("Build Kenan Service Instance");
       if (!chargeMRC) {
-        createReinstallServiceInstance(account, serviceInstance, deviceInfo);
+        createReinstallServiceInstance(account, serviceInstance, device);
       } else {
         createServiceInstance(account, serviceInstance);
       }
