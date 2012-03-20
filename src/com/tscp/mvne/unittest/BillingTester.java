@@ -40,14 +40,13 @@ import com.telscape.billingserviceinterface.ServiceHolder;
 import com.telscape.billingserviceinterface.UsageHolder;
 import com.telscape.billingserviceinterface.ValueHolder;
 import com.tscp.mvne.billing.Account;
-import com.tscp.mvne.billing.BillingSystem;
-import com.tscp.mvne.billing.ServiceInstance;
-import com.tscp.mvne.logger.TscpmvneLogger;
+import com.tscp.mvne.billing.provisioning.ServiceInstance;
+import com.tscp.mvne.billing.service.BillService;
 import com.tscp.mvne.payment.dao.PaymentTransaction;
+import com.tscp.mvne.util.logger.TscpmvneLogger;
 
 public class BillingTester {
-
-  BillingSystem billingImpl;
+  BillService billingImpl;
   BillingService billingservice;
   // Logger logger;
   TscpmvneLogger logger;
@@ -66,13 +65,13 @@ public class BillingTester {
     } catch (IOException io) {
       io.printStackTrace();
     }
-    billingImpl = new BillingSystem();
+    billingImpl = new BillService();
     logger.info("test 1");
   }
 
   public Account getAccountByAccountNo(int accountNo) {
     if (billingImpl == null) {
-      billingImpl = new BillingSystem();
+      billingImpl = new BillService();
     }
 
     Account account = billingImpl.getAccountByAccountNo(accountNo);
@@ -123,7 +122,7 @@ public class BillingTester {
   }
 
   private void test3() {
-    BillingSystem billingImpl = new BillingSystem();
+    BillService billingImpl = new BillService();
 
     Account account = billingImpl.getAccountByAccountNo(691421);
     account.toString();
@@ -134,7 +133,7 @@ public class BillingTester {
   }
 
   private void createAccount() {
-    BillingSystem billingimpl = new BillingSystem();
+    BillService billingimpl = new BillService();
     Account acct = new Account();
     acct.setContact_address1("5540 Middlebury Ct");
     acct.setContact_address2("");
@@ -242,8 +241,7 @@ public class BillingTester {
 
       billingAccount.setVipCode(Short.parseShort(props.getProperty("account.vip_code")));
       try {
-        XMLGregorianCalendar value = DatatypeFactory.newInstance().newXMLGregorianCalendar(
-          new GregorianCalendar(TimeZone.getTimeZone("America/Los_Angeles")));
+        XMLGregorianCalendar value = DatatypeFactory.newInstance().newXMLGregorianCalendar(new GregorianCalendar(TimeZone.getTimeZone("America/Los_Angeles")));
         // DataTypeFactory.newXML
         System.out.println(value);
         billingAccount.setSysDate(value);
@@ -408,10 +406,8 @@ public class BillingTester {
       System.out.println("Account Categroy :: " + props.getProperty("account.account_category"));
       System.out.println("Currency Code :: " + props.getProperty("account.currency_code"));
 
-      XMLGregorianCalendar sysdate = DatatypeFactory.newInstance().newXMLGregorianCalendar(
-        new GregorianCalendar(TimeZone.getTimeZone("America/Los_Angeles")));
-      XMLGregorianCalendar activeDate = DatatypeFactory.newInstance().newXMLGregorianCalendar(
-        new GregorianCalendar(2011, 6, 26));
+      XMLGregorianCalendar sysdate = DatatypeFactory.newInstance().newXMLGregorianCalendar(new GregorianCalendar(TimeZone.getTimeZone("America/Los_Angeles")));
+      XMLGregorianCalendar activeDate = DatatypeFactory.newInstance().newXMLGregorianCalendar(new GregorianCalendar(2011, 6, 26));
 
       short currencycode = Short.parseShort(props.getProperty("service.currency_code"));
       short emfconfigid = Short.parseShort(props.getProperty("service.emf_config_id"));
@@ -524,10 +520,8 @@ public class BillingTester {
       BillingServiceInterface bsi = new BillingServiceInterface();
       BillingServiceInterfaceSoap port = bsi.getBillingServiceInterfaceSoap();
 
-      XMLGregorianCalendar sysdate = DatatypeFactory.newInstance().newXMLGregorianCalendar(
-        new GregorianCalendar(TimeZone.getTimeZone("America/Los_Angeles")));
-      XMLGregorianCalendar activeDate = DatatypeFactory.newInstance().newXMLGregorianCalendar(
-        new GregorianCalendar(2011, 7, 26));
+      XMLGregorianCalendar sysdate = DatatypeFactory.newInstance().newXMLGregorianCalendar(new GregorianCalendar(TimeZone.getTimeZone("America/Los_Angeles")));
+      XMLGregorianCalendar activeDate = DatatypeFactory.newInstance().newXMLGregorianCalendar(new GregorianCalendar(2011, 7, 26));
 
       int packageid = Integer.parseInt(props.getProperty("package.package_id"));
       short externalidtype = Short.parseShort(props.getProperty("package.external_id_type"));
@@ -576,10 +570,8 @@ public class BillingTester {
       BillingServiceInterface bsi = new BillingServiceInterface();
       BillingServiceInterfaceSoap port = bsi.getBillingServiceInterfaceSoap();
 
-      XMLGregorianCalendar sysdate = DatatypeFactory.newInstance().newXMLGregorianCalendar(
-        new GregorianCalendar(TimeZone.getTimeZone("America/Los_Angeles")));
-      XMLGregorianCalendar activeDate = DatatypeFactory.newInstance().newXMLGregorianCalendar(
-        new GregorianCalendar(2011, 7, 26));
+      XMLGregorianCalendar sysdate = DatatypeFactory.newInstance().newXMLGregorianCalendar(new GregorianCalendar(TimeZone.getTimeZone("America/Los_Angeles")));
+      XMLGregorianCalendar activeDate = DatatypeFactory.newInstance().newXMLGregorianCalendar(new GregorianCalendar(2011, 7, 26));
 
       int componentid = Integer.parseInt(props.getProperty("component.reinstall.component"));
       int packageid = Integer.parseInt(props.getProperty("component.package_id"));
@@ -632,8 +624,8 @@ public class BillingTester {
       String externalId = accountNo;
       int externalIdType = 1;
       String amount = "1000";
-      XMLGregorianCalendar transDate = DatatypeFactory.newInstance().newXMLGregorianCalendar(
-        new GregorianCalendar(TimeZone.getTimeZone("America/Los Angeles")));
+      XMLGregorianCalendar transDate = DatatypeFactory.newInstance()
+          .newXMLGregorianCalendar(new GregorianCalendar(TimeZone.getTimeZone("America/Los Angeles")));
       int transType = 1;
       String submitBy = "dta";
 
@@ -785,7 +777,7 @@ public class BillingTester {
   }
 
   private void updateThresholdValue(String tn, int threshold) {
-    BillingSystem billingImpl = new BillingSystem();
+    BillService billingImpl = new BillService();
     ServiceInstance serviceInstance = new ServiceInstance();
     serviceInstance.setExternalId(tn);
     serviceInstance.setExternalIdType(3);

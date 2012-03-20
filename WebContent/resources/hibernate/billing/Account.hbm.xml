@@ -27,19 +27,19 @@
     <property name="address2" column="cust_address2"/> <property name="address3" column="cust_address3"/> <property name="city" column="cust_city"/> 
     <property name="state" column="cust_state"/> </class> -->
 
-  <class name="com.tscp.mvne.billing.ServiceInstance">
+  <class name="com.tscp.mvne.billing.provisioning.ServiceInstance">
     <id name="subscriberNumber" column="subscr_no" />
     <property name="externalId" column="external_id" />
     <property name="externalIdType" column="external_id_type" />
   </class>
 
-  <class name="com.tscp.mvne.billing.Package">
+  <class name="com.tscp.mvne.billing.provisioning.Package">
     <id name="instanceId" column="package_instance_id" />
     <property name="id" column="package_id" />
     <property name="name" column="display_value" />
   </class>
 
-  <class name="com.tscp.mvne.billing.Component">
+  <class name="com.tscp.mvne.billing.provisioning.Component">
     <id name="instanceId" column="component_instance_id" />
     <property name="name" column="component_name" />
     <property name="activeDate" column="component_active_date" />
@@ -62,7 +62,7 @@
   </sql-query>
 
   <sql-query name="get_active_services" callable="true">
-    <return class="com.tscp.mvne.billing.ServiceInstance">
+    <return class="com.tscp.mvne.billing.provisioning.ServiceInstance">
       <return-property name="subscriberNumber" column="subscr_no" />
       <return-property name="externalId" column="external_id" />
       <return-property name="externalIdType" column="external_id_type" />
@@ -71,7 +71,7 @@
   </sql-query>
 
   <sql-query name="get_active_packages" callable="true">
-    <return class="com.tscp.mvne.billing.Package">
+    <return class="com.tscp.mvne.billing.provisioning.Package">
       <return-property name="instanceId" column="package_instance_id" />
       <return-property name="id" column="package_id" />
       <return-property name="name" column="display_value" />
@@ -80,7 +80,7 @@
   </sql-query>
 
   <sql-query name="get_active_components" callable="true">
-    <return class="com.tscp.mvne.billing.Component">
+    <return class="com.tscp.mvne.billing.provisioning.Component">
       <return-property name="activeDate" column="component_active_date" />
       <return-property name="id" column="component_id" />
       <return-property name="name" column="component_name" />

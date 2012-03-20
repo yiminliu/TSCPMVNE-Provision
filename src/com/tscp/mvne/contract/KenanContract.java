@@ -1,7 +1,7 @@
 package com.tscp.mvne.contract;
 
 import com.tscp.mvne.billing.Account;
-import com.tscp.mvne.billing.ServiceInstance;
+import com.tscp.mvne.billing.provisioning.ServiceInstance;
 
 public class KenanContract {
   private Account account;

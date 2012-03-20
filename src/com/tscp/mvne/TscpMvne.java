@@ -3,7 +3,7 @@ package com.tscp.mvne;
 import javax.xml.ws.WebServiceException;
 
 import com.tscp.mvne.billing.Account;
-import com.tscp.mvne.billing.ServiceInstance;
+import com.tscp.mvne.billing.provisioning.ServiceInstance;
 import com.tscp.mvne.customer.Customer;
 import com.tscp.mvne.network.NetworkInfo;
 

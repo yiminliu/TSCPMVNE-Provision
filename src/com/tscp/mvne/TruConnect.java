@@ -22,14 +22,14 @@ import com.telscape.billingserviceinterface.PaymentHolder;
 import com.telscape.billingserviceinterface.UsageHolder;
 import com.tscp.mvne.billing.Account;
 import com.tscp.mvne.billing.AccountStatus;
-import com.tscp.mvne.billing.BillingSystem;
 import com.tscp.mvne.billing.BillingUtil;
-import com.tscp.mvne.billing.Component;
-import com.tscp.mvne.billing.Package;
-import com.tscp.mvne.billing.ServiceInstance;
 import com.tscp.mvne.billing.exception.BillingException;
 import com.tscp.mvne.billing.exception.ProvisionException;
-import com.tscp.mvne.billing.provisioning.service.ProvisioningService;
+import com.tscp.mvne.billing.provisioning.Component;
+import com.tscp.mvne.billing.provisioning.Package;
+import com.tscp.mvne.billing.provisioning.ServiceInstance;
+import com.tscp.mvne.billing.provisioning.service.ProvisionService;
+import com.tscp.mvne.billing.service.BillService;
 import com.tscp.mvne.billing.usage.UsageDetail;
 import com.tscp.mvne.billing.usage.UsageSummary;
 import com.tscp.mvne.config.DEVICE;
@@ -49,12 +49,10 @@ import com.tscp.mvne.device.DeviceAssociation;
 import com.tscp.mvne.device.DeviceStatus;
 import com.tscp.mvne.device.service.DeviceService;
 import com.tscp.mvne.exception.MVNEException;
-import com.tscp.mvne.logger.LoggerHelper;
-import com.tscp.mvne.logger.TscpmvneLogger;
 import com.tscp.mvne.network.NetworkInfo;
 import com.tscp.mvne.network.NetworkInfoUtil;
-import com.tscp.mvne.network.NetworkSystem;
 import com.tscp.mvne.network.exception.NetworkException;
+import com.tscp.mvne.network.service.NetworkService;
 import com.tscp.mvne.notification.EmailTemplate;
 import com.tscp.mvne.notification.NotificationCategory;
 import com.tscp.mvne.notification.NotificationSender;
@@ -73,28 +71,28 @@ import com.tscp.mvne.payment.dao.PaymentTransaction;
 import com.tscp.mvne.payment.dao.PaymentUnitResponse;
 import com.tscp.mvne.refund.KenanPayment;
 import com.tscp.mvne.refund.RefundService;
+import com.tscp.mvne.util.logger.LoggerHelper;
+import com.tscp.mvne.util.logger.TscpmvneLogger;
 
 @WebService
-public class TruConnect implements TscpMvne {
+public class TruConnect {
   private static Logger logbackLogger = LoggerFactory.getLogger("TSCPMVNELogger");
   private static TscpmvneLogger logger;
-  private NetworkSystem networkSystem;
-  private BillingSystem billingSystem;
-  private ContractService contractService;
-  private RefundService refundService;
-  private static ProvisioningService provisionService;
+  private static NetworkService networkService;
+  private static BillService billService;
+  private static ContractService contractService;
+  private static RefundService refundService;
+  private static ProvisionService provisionService;
   private static DeviceService deviceService;
 
   public TruConnect() {
     init();
   }
 
-  @Override
   @WebMethod
   public NetworkInfo activateService(Customer customer, NetworkInfo networkInfo) {
     LoggerHelper logHelper = new LoggerHelper("activateService", customer, networkInfo);
-    networkSystem.activateMDN(networkInfo);
-    // Update device information
+    networkService.activateMDN(networkInfo);
     try {
       logger.info("Attempting to update device information to active");
       if (customer.getDeviceList() == null) {
@@ -194,7 +192,7 @@ public class TruConnect implements TscpMvne {
   }
 
   private void bindServiceInstanceObject(Account account, ServiceInstance serviceInstance) {
-    List<ServiceInstance> serviceInstanceList = BillingSystem.getServiceInstanceList(account);
+    List<ServiceInstance> serviceInstanceList = billService.getServiceInstanceList(account);
     if (serviceInstanceList != null) {
       for (ServiceInstance si : serviceInstanceList) {
         if (si.getExternalId().equals(serviceInstance.getExternalId())) {
@@ -204,17 +202,15 @@ public class TruConnect implements TscpMvne {
     } else {
       throw new WebServiceException("Active ExternalIDs not found for Account Number " + account.getAccountno());
     }
-
   }
 
   @WebMethod
-  @Override
   public Account createBillingAccount(Customer customer, Account account) {
     LoggerHelper logHelper = new LoggerHelper("createBillingAccount", customer, account);
     if (customer == null || customer.getId() <= 0) {
       throw new WebServiceException("Please specify a customer prior to adding an account.");
     }
-    int accountNumber = billingSystem.createAccount(account);
+    int accountNumber = billService.createAccount(account);
     if (accountNumber <= 0) {
       throw new WebServiceException("Error when building account...No account number returned...");
     } else {
@@ -227,26 +223,26 @@ public class TruConnect implements TscpMvne {
   private void createReinstallServiceInstance(Account account, ServiceInstance serviceInstance, Device deviceInfo) {
     LoggerHelper logHelper = new LoggerHelper("createReinstallServiceInstance", account, serviceInstance, deviceInfo);
     try {
-      account.setServiceinstancelist(BillingSystem.getServiceInstanceList(account));
+      account.setServiceinstancelist(billService.getServiceInstanceList(account));
     } catch (BillingException bill_ex) {
       logger.warn("Billing Exception thrown " + bill_ex.getMessage());
     }
     logger.info("adding service instance");
-    billingSystem.addServiceInstance(account, serviceInstance);
-    com.tscp.mvne.billing.Package lPackage = new com.tscp.mvne.billing.Package();
+    billService.addServiceInstance(account, serviceInstance);
+    com.tscp.mvne.billing.provisioning.Package lPackage = new com.tscp.mvne.billing.provisioning.Package();
     logger.info("adding package");
-    billingSystem.addPackage(account, serviceInstance, lPackage);
-    com.tscp.mvne.billing.Component componentid = new com.tscp.mvne.billing.Component();
+    billService.addPackage(account, serviceInstance, lPackage);
+    com.tscp.mvne.billing.provisioning.Component componentid = new com.tscp.mvne.billing.provisioning.Component();
     componentid.setId(PROVISION.COMPONENT.REINSTALL);
     logger.info("adding Component");
-    billingSystem.addComponent(account, serviceInstance, lPackage, componentid);
+    billService.addComponent(account, serviceInstance, lPackage, componentid);
 
     // Update device association for this customer
     try {
       logger.info("Adding new association");
       // logger.info("Updating Device Association");
       logger.info("attempting to retrieve subscr_no for EXTERNAL_ID " + serviceInstance.getExternalId());
-      List<ServiceInstance> serviceInstanceList = BillingSystem.getServiceInstanceList(account);
+      List<ServiceInstance> serviceInstanceList = billService.getServiceInstanceList(account);
       if (serviceInstanceList != null) {
         for (ServiceInstance tempServiceInstance : serviceInstanceList) {
           if (tempServiceInstance.getExternalId().equals(serviceInstance.getExternalId())) {
@@ -273,36 +269,35 @@ public class TruConnect implements TscpMvne {
       logger.warn(ex.getMessage());
     }
     logHelper.logMethodExit();
-  };
+  }
 
   @WebMethod
-  @Override
   public Account createServiceInstance(Account account, ServiceInstance serviceInstance) {
     LoggerHelper logHelper = new LoggerHelper("createServiceInstance", account, serviceInstance);
     try {
-      account.setServiceinstancelist(BillingSystem.getServiceInstanceList(account));
+      account.setServiceinstancelist(billService.getServiceInstanceList(account));
     } catch (BillingException bill_ex) {
       logger.warn("Billing Exception thrown " + bill_ex.getMessage());
       return account;
     }
     logger.info("adding service instance");
-    billingSystem.addServiceInstance(account, serviceInstance);
-    com.tscp.mvne.billing.Package lPackage = new com.tscp.mvne.billing.Package();
+    billService.addServiceInstance(account, serviceInstance);
+    com.tscp.mvne.billing.provisioning.Package lPackage = new com.tscp.mvne.billing.provisioning.Package();
     logger.info("adding package");
-    billingSystem.addPackage(account, serviceInstance, lPackage);
-    com.tscp.mvne.billing.Component componentid = null;
+    billService.addPackage(account, serviceInstance, lPackage);
+    com.tscp.mvne.billing.provisioning.Component componentid = null;
     logger.info("adding Component");
-    billingSystem.addComponent(account, serviceInstance, lPackage, componentid);
+    billService.addComponent(account, serviceInstance, lPackage, componentid);
 
     if (account.getServiceinstancelist() == null) {
       account.setServiceinstancelist(new Vector<ServiceInstance>());
     }
     account.getServiceinstancelist().add(serviceInstance);
     if (account.getPackageList() == null) {
-      account.setPackageList(new Vector<com.tscp.mvne.billing.Package>());
+      account.setPackageList(new Vector<com.tscp.mvne.billing.provisioning.Package>());
     }
     if (lPackage.getComponentList() == null) {
-      lPackage.setComponentList(new Vector<com.tscp.mvne.billing.Component>());
+      lPackage.setComponentList(new Vector<com.tscp.mvne.billing.provisioning.Component>());
     }
     lPackage.getComponentList().add(componentid);
     account.getPackageList().add(lPackage);
@@ -316,7 +311,7 @@ public class TruConnect implements TscpMvne {
         customer.setId(custAcctMapDAO.getCust_id());
 
         logger.info("Retrieving network information for MDN " + serviceInstance.getExternalId());
-        NetworkInfo networkInfo = networkSystem.getNetworkInfo(null, serviceInstance.getExternalId());
+        NetworkInfo networkInfo = networkService.getNetworkInfo(null, serviceInstance.getExternalId());
         if (networkInfo == null) {
           throw new NetworkException("Cannot find Active device information for mdn " + serviceInstance.getExternalId());
         }
@@ -329,7 +324,7 @@ public class TruConnect implements TscpMvne {
             if (deviceInfo.getValue().equals(networkInfo.getEsnmeiddec()) || deviceInfo.getValue().equals(networkInfo.getEsnmeidhex())) {
               logger.info("found device " + deviceInfo.getId() + "...");
               logger.info("attempting to retrieve subscr_no for EXTERNAL_ID " + serviceInstance.getExternalId());
-              List<ServiceInstance> serviceInstanceList = billingSystem.getServiceInstanceList(account);
+              List<ServiceInstance> serviceInstanceList = billService.getServiceInstanceList(account);
               if (serviceInstanceList != null) {
                 for (ServiceInstance si : serviceInstanceList) {
                   if (si.getExternalId().equals(serviceInstance.getExternalId())) {
@@ -434,14 +429,14 @@ public class TruConnect implements TscpMvne {
   @WebMethod
   public void disconnectFromNetwork(NetworkInfo networkInfo) {
     logger.info("Disconnecting from Network MDN " + networkInfo.getMdn());
-    networkSystem.disconnectService(networkInfo);
+    networkService.disconnectService(networkInfo);
   }
 
   /**
    * Disconnects the device from the Network and Kenan then updates the device's
    * status.
    */
-  @Override
+
   @WebMethod
   public void disconnectService(ServiceInstance serviceInstance) {
     LoggerHelper logHelper = new LoggerHelper("disconnectService", serviceInstance);
@@ -449,7 +444,7 @@ public class TruConnect implements TscpMvne {
     Account account = new Account();
     logger.info("fetching account by TN");
     try {
-      account.setAccountno(billingSystem.getAccountNoByTN(serviceInstance.getExternalId()));
+      account.setAccountno(billService.getAccountNoByTN(serviceInstance.getExternalId()));
       if (account.getAccountno() == 0) {
         throw new BillingException("Unable to get account number for External ID " + serviceInstance.getExternalId());
       }
@@ -509,15 +504,88 @@ public class TruConnect implements TscpMvne {
    */
   @WebMethod
   public void disconnectServiceInstanceFromKenan(Account account, ServiceInstance serviceInstance) {
-    billingSystem.deleteServiceInstance(account, serviceInstance);
+    billService.deleteServiceInstance(account, serviceInstance);
   }
 
   @WebMethod
   public Account getAccountInfo(int accountNumber) {
     LoggerHelper logHelper = new LoggerHelper("getAccountInfo", accountNumber);
-    Account account = billingSystem.getAccountByAccountNo(accountNumber);
+    Account account = billService.getAccountByAccountNo(accountNumber);
     logHelper.logMethodReturn(account);
     return account;
+  }
+
+  /**
+   * Temporary "lightweight" method to get the full state of the account.
+   * 
+   * @param custId
+   * @param accountNo
+   * @param deviceId
+   * @return
+   */
+  private AccountStatus getAccountStatus(int custId, int accountNo, Device device, String externalId) throws DeviceException, NetworkException,
+      ProvisionException {
+    AccountStatus accountStatus = new AccountStatus();
+
+    // get device status
+    accountStatus.setDeviceStatus(device.getStatus().toUpperCase());
+    System.out.println("DEVCE STATUS IS " + device.getStatus());
+
+    // get network status
+    NetworkInfo networkInfo = getNetworkInfo(device.getValue(), null);
+    System.out.println("NETWORK STATUS IS " + networkInfo.getStatus());
+    if (networkInfo != null && networkInfo.getStatus() != null) {
+      if (networkInfo.getStatus().equals("A")) {
+        accountStatus.setNetworkStatus("ACTIVE");
+      } else if (networkInfo.getStatus().equals("C")) {
+        accountStatus.setNetworkStatus("CANCEL");
+      } else if (networkInfo.getStatus().equals("S")) {
+        accountStatus.setNetworkStatus("SUSPEND");
+      } else if (networkInfo.getStatus().equals("R")) {
+        accountStatus.setNetworkStatus("RESERVE");
+      }
+    }
+
+    // get billing status
+    Component component = provisionService.getActiveComponent(accountNo, externalId);
+    System.out.println("BILLING STATUS IS " + component.getId());
+    if (component.getId() == 500000) {
+      accountStatus.setBillingStatus("ACTIVE");
+    } else if (component.getId() == 500001) {
+      accountStatus.setBillingStatus("REINSTALL");
+    } else if (component.getId() == 500002) {
+      accountStatus.setBillingStatus("SUSPEND");
+    }
+
+    return accountStatus;
+  }
+
+  /**
+   * Temporary "lightweight" method to get the full state of the account.
+   * 
+   * @param custId
+   * @param accountNo
+   * @param deviceId
+   * @return
+   */
+  @WebMethod
+  public AccountStatus getAccountStatus(int custId, int accountNo, int deviceId) throws DeviceException, NetworkException, ProvisionException {
+    ServiceInstance serviceInstance = provisionService.getActiveService(accountNo);
+    return getAccountStatus(custId, accountNo, deviceId, serviceInstance.getExternalId());
+  }
+
+  /**
+   * Temporary "lightweight" method to get the full state of the account.
+   * 
+   * @param custId
+   * @param accountNo
+   * @param deviceId
+   * @return
+   */
+  private AccountStatus getAccountStatus(int custId, int accountNo, int deviceId, String externalId) throws DeviceException, NetworkException,
+      ProvisionException {
+    Device device = deviceService.getDevice(custId, deviceId, accountNo);
+    return getAccountStatus(custId, accountNo, device, externalId);
   }
 
   @WebMethod
@@ -630,11 +698,10 @@ public class TruConnect implements TscpMvne {
     return payments;
   }
 
-  @Override
   @WebMethod
   public NetworkInfo getNetworkInfo(String esn, String mdn) throws NetworkException {
     LoggerHelper logHelper = new LoggerHelper("getNetworkInfo", esn, mdn);
-    NetworkInfo networkInfo = networkSystem.getNetworkInfo(esn, mdn);
+    NetworkInfo networkInfo = networkService.getNetworkInfo(esn, mdn);
     logHelper.logMethodReturn(networkInfo);
     return networkInfo;
   }
@@ -647,7 +714,7 @@ public class TruConnect implements TscpMvne {
   @WebMethod
   public NetworkInfo getSwapNetworkInfo(String esn, String mdn) {
     LoggerHelper logHelper = new LoggerHelper("getSwapNetworkInfo", esn, mdn);
-    NetworkInfo networkInfo = networkSystem.getSwapNetworkInfo(esn, mdn);
+    NetworkInfo networkInfo = networkService.getSwapNetworkInfo(esn, mdn);
     logHelper.logMethodReturn(networkInfo);
     return networkInfo;
   }
@@ -672,7 +739,7 @@ public class TruConnect implements TscpMvne {
         for (CustAcctMapDAO custAcct : accountList) {
           Account account = new Account();
           account.setAccountno(custAcct.getAccount_no());
-          List<ServiceInstance> serviceInstanceList = BillingSystem.getServiceInstanceList(account);
+          List<ServiceInstance> serviceInstanceList = billService.getServiceInstanceList(account);
           for (ServiceInstance si : serviceInstanceList) {
             if (si.getExternalId().equals(serviceInstance.getExternalId())) {
               logger.info("request is valid");
@@ -686,7 +753,7 @@ public class TruConnect implements TscpMvne {
       if (!validRequest) {
         throw new CustomerException("Error! Customer " + customer.getId() + " is not associated with ServiceInstance " + serviceInstance.getExternalId());
       }
-      UsageHolder usageHolder = billingSystem.getUnbilledUsageSummary(serviceInstance);
+      UsageHolder usageHolder = billService.getUnbilledUsageSummary(serviceInstance);
       if (usageHolder != null) {
         if (usageHolder.getStatusMessage() != null && usageHolder.getStatusMessage().getStatus().equalsIgnoreCase("SUCCESS")) {
           usage.load(usageHolder.getUsage());
@@ -709,16 +776,45 @@ public class TruConnect implements TscpMvne {
     return usage;
   }
 
-  @Override
   @WebMethod(exclude = true)
   public void init() {
     logger = new TscpmvneLogger();
-    networkSystem = new NetworkSystem();
-    billingSystem = new BillingSystem();
+    networkService = new NetworkService();
+    billService = new BillService();
     contractService = new ContractService();
     refundService = new RefundService();
-    provisionService = new ProvisioningService();
+    provisionService = new ProvisionService();
     deviceService = new DeviceService();
+  }
+
+  @WebMethod
+  public PaymentUnitResponse makePaymentById(String sessionId, int custId, int accountNo, int paymentId, String amount) {
+    Account account = getAccountInfo(accountNo);
+    Customer customer = new Customer();
+    customer.setId(custId);
+    return submitPaymentByPaymentId(sessionId, customer, paymentId, account, amount);
+  }
+
+  private void paymentUpdatedRoutine(Customer customer) {
+    if (customer == null || customer.getId() <= 0) {
+      throw new CustomerException("invalid customer object");
+    }
+    List<CustAcctMapDAO> custAcctMapDAOList = customer.getCustaccts();
+    logger.info("Retrieve account list from CUST_ACCT_MAP");
+    if (custAcctMapDAOList != null && custAcctMapDAOList.size() > 0) {
+      for (CustAcctMapDAO custAcctMapDAO : custAcctMapDAOList) {
+        Account account = new Account();
+        account.setAccountno(custAcctMapDAO.getAccount_no());
+        logger.info("update all services associated with this customer to be status 0 in the threshold");
+        logger.info("Updating service instances for account " + account.getAccountno());
+        Account loadedAccount = billService.getAccountByAccountNo(account.getAccountno());
+        for (ServiceInstance serviceInstance : loadedAccount.getServiceinstancelist()) {
+          logger.info("Updating threshold value for ServiceInstance " + serviceInstance.getExternalId() + " to " + PROVISION.SERVICE.RESTORE);
+          billService.updateServiceInstanceStatus(serviceInstance, PROVISION.SERVICE.RESTORE);
+        }
+      }
+    }
+
   }
 
   /**
@@ -730,160 +826,7 @@ public class TruConnect implements TscpMvne {
    */
   @WebMethod
   private void reactivateBillingAccount(int accountNumber) throws BillingException {
-    billingSystem.reactivateBillingAccount(accountNumber);
-  }
-
-  /**
-   * Use submitPaymentByaymentId as all credit cards should be saved in the
-   * database.
-   * 
-   * @param sessionId
-   * @param account
-   * @param creditCard
-   * @param paymentAmount
-   * @return
-   */
-  @Deprecated
-  @WebMethod
-  public PaymentUnitResponse submitPaymentByCreditCard(String sessionId, Account account, CreditCard creditCard, String paymentAmount) {
-    LoggerHelper logHelper = new LoggerHelper("makeCreditCardPayment", sessionId, account, creditCard, paymentAmount);
-    if (creditCard == null) {
-      logger.warn("SessionId " + sessionId + ":: CreditCard Information must be present to submit a CreditCard Payment");
-      throw new PaymentException("makeCreditCardPayment", "CreditCard Information must be present to submit a CreditCard Payment");
-    }
-    if (paymentAmount == null || paymentAmount.indexOf(".") == 0) {
-      logger.warn("Invalid payment format. Payment format needs to be \"xxx.xx\" ");
-      throw new PaymentException("makeCreditCardPayment", "Invalid payment format. Payment format needs to be \"xxx.xx\" ");
-    }
-    if (account == null || account.getAccountno() <= 0) {
-      logger.warn("Invalid Account Object. Account must be specified when making payments...");
-      throw new BillingException("makeCreditCardPayment", "Invalid Account Object. Account must be specified when making payments...");
-    }
-    creditCard.validate();
-    logger.info("Account " + account.getAccountno() + " is attempting to make a " + paymentAmount + " payment against Credit Card ending in "
-        + creditCard.getCreditCardNumber().subSequence(creditCard.getCreditCardNumber().length() - 4, creditCard.getCreditCardNumber().length()));
-
-    logger.info("Creating Transaction...");
-    // Create Transaction
-    PaymentTransaction pmttransaction = new PaymentTransaction();
-    pmttransaction.setSessionId(sessionId);
-    pmttransaction.setPmtId(creditCard.getPaymentid());
-    pmttransaction.setPaymentAmount(paymentAmount);
-    pmttransaction.setAccountNo(account.getAccountno());
-
-    pmttransaction.savePaymentTransaction();
-    logger.info("Transaction " + pmttransaction.getTransId() + " has been entered and is beginning");
-
-    // Submit to payment unit
-    logger.info("submitting creditcard payment");
-    PaymentUnitResponse response = creditCard.submitPayment(pmttransaction);
-    if (response != null) {
-      logger.info(response.toString());
-    } else {
-      response = new PaymentUnitResponse();
-      response.setConfcode("-1");
-      response.setTransid("000000");
-      response.setConfdescr("No response returned from payment unit");
-      response.setAuthcode("System generated error input");
-    }
-
-    // update transaction
-    pmttransaction.setPaymentUnitConfirmation(response.getConfirmationString());
-    pmttransaction.setPaymentUnitMessage(response.getConfdescr() + " AuthCode::" + response.getAuthcode());
-    pmttransaction.setPaymentUnitDate(new Date());
-    String paymentMethod = "unknown";
-    String paymentSource = "";
-    if (creditCard.getCreditCardNumber().substring(0, 1).equals(CreditCard.CREDITCARD_AMEX)) {
-      paymentMethod = "AmericanExpress";
-      // paymentSource = "3XXX-XXXXXX-X";
-    } else if (creditCard.getCreditCardNumber().substring(0, 1).equals(CreditCard.CREDITCARD_VISA)) {
-      paymentMethod = "Visa";
-      // paymentSource = "4XXX-XXXX-XXXX-";
-    } else if (creditCard.getCreditCardNumber().substring(0, 1).equals(CreditCard.CREDITCARD_MASTERCARD)) {
-      paymentMethod = "MasterCard";
-      // paymentSource = "6XXX-XXXX-XXXX-";
-    } else if (creditCard.getCreditCardNumber().substring(0, 1).equals(CreditCard.CREDITCARD_DISCOVER)) {
-      paymentMethod = "Discover";
-      // paymentSource = "6XXX-XXXX-XXXX-";
-    }
-    paymentSource += creditCard.getCreditCardNumber().substring(creditCard.getCreditCardNumber().length() - 4, creditCard.getCreditCardNumber().length());
-    pmttransaction.setPaymentMethod(paymentMethod);
-    pmttransaction.setPaymentSource(paymentSource);
-    pmttransaction.savePaymentTransaction();
-
-    if (response.getConfcode().equals(PaymentUnitResponse.SUCCESSFUL_TRANSACTION)) {
-      // Submit to Kenan
-      logger.info("adding payment information to Kenan...");
-      billingSystem.addPayment(account, paymentAmount.replace(".", ""));
-
-      // get the tracking ID from Kenan, it should be the last entry in the list
-      // of payments
-      logger.info("retrieving payment list from Kenan");
-      List<PaymentHolder> paymentList = billingSystem.getCompletePaymentHistory(account);
-      if (paymentList != null && paymentList.size() > 0) {
-        try {
-          Payment payment = null;
-          for (PaymentHolder paymentHolder : paymentList) {
-            if (payment == null) {
-              payment = paymentHolder.getPayment();
-            }
-            if (payment.getTrackingId() <= paymentHolder.getPayment().getTrackingId()) {
-              payment = paymentHolder.getPayment();
-            }
-          }
-          logger.info("Latest Billing Tracking ID found to be " + payment.getTrackingId());
-          pmttransaction.setBillingTrackingId(payment.getTrackingId());
-          // PaymentHolder paymentHolder =
-          // paymentList.get(paymentList.size()-1);
-          // logger.info("Latest Billing Tracking ID found to be "+paymentHolder.getPayment().getTrackingId());
-          // pmttransaction.setBillingTrackingId(paymentHolder.getPayment().getTrackingId());
-        } catch (ArrayIndexOutOfBoundsException index_ex) {
-          logger.warn(index_ex.getMessage() + "...error retrieving payment item index at [" + (paymentList.size() - 1) + "]");
-          pmttransaction.setBillingTrackingId(-1);
-        } catch (NullPointerException np_ex) {
-          logger.warn(np_ex.getMessage() + "...payment is null.");
-          pmttransaction.setBillingTrackingId(-1);
-        }
-
-      }
-
-      // update transaction
-      pmttransaction.setBillingUnitDate(new Date());
-      pmttransaction.savePaymentTransaction();
-      logger.info("Transaction information saved and payment completed for Account " + account.getAccountno() + ".");
-    } else {
-      logger.warn("Error posting credit card payment. :: " + response.getConfdescr() + " " + response.getAuthcode());
-      throw new PaymentException("makeCreditCardPayment", "Error posting credit card payment. :: " + response.getConfdescr() + " " + response.getAuthcode());
-    }
-    logHelper.logMethodExit();
-    return response;
-  }
-
-  private void paymentUpdatedRoutine(Customer customer) {
-    if (customer == null || customer.getId() <= 0) {
-      throw new CustomerException("invalid customer object");
-    }
-
-    List<CustAcctMapDAO> custAcctMapDAOList = customer.getCustaccts();
-    logger.info("Retrieve account list from CUST_ACCT_MAP");
-    if (custAcctMapDAOList != null && custAcctMapDAOList.size() > 0) {
-      // billingImpl.get
-      for (CustAcctMapDAO custAcctMapDAO : custAcctMapDAOList) {
-        Account account = new Account();
-        account.setAccountno(custAcctMapDAO.getAccount_no());
-        logger.info("update all services associated with this customer to be status 0 in the threshold");
-        logger.info("Updating service instances for account " + account.getAccountno());
-        Account loadedAccount = billingSystem.getAccountByAccountNo(account.getAccountno());
-        for (ServiceInstance serviceInstance : loadedAccount.getServiceinstancelist()) {
-          logger.info("Updating threshold value for ServiceInstance " + serviceInstance.getExternalId() + " to " + PROVISION.SERVICE.RESTORE);
-          billingSystem.updateServiceInstanceStatus(serviceInstance, PROVISION.SERVICE.RESTORE);
-        }
-      }
-      // throw new
-      // PaymentException("submitPaymentByPaymentId","Error posting payment. :: "+response.getConfdescr()+" "+response.getAuthcode());
-
-    }
-
+    billService.reactivateBillingAccount(accountNumber);
   }
 
   /**
@@ -1024,22 +967,106 @@ public class TruConnect implements TscpMvne {
     return networkInfo;
   }
 
-  @Override
   @WebMethod
   public NetworkInfo reserveMDN() {
     LoggerHelper logHelper = new LoggerHelper("reserveMdn");
     String csa = null;
     String priceplan = null;
     List<String> soclist = null;
-    NetworkInfo networkInfo = networkSystem.reserveMDN(csa, priceplan, soclist);
+    NetworkInfo networkInfo = networkService.reserveMDN(csa, priceplan, soclist);
     logHelper.logMethodReturn(networkInfo);
     return networkInfo;
   }
 
+  // TODO this is a mockup function - accountStatus should contain all elements
+  // ServiceInstance, Package, Component, NetworkInfo and DeviceInfo. It should
+  // then audit the state of the
+  // account and repair it as needed
+  private void restoreAndRepairAccount(int custId, int accountNo, int deviceId) {
+    ServiceInstance serviceInstance = provisionService.getActiveService(accountNo);
+    AccountStatus accountStatus = getAccountStatus(custId, accountNo, deviceId, serviceInstance.getExternalId());
+    if (!accountStatus.getBillingStatus().equals("ACTIVE") || !accountStatus.getBillingStatus().equals("REINSTALL")) {
+      Package pkg = provisionService.getActivePackage(accountNo);
+      Component component = provisionService.getActiveComponent(accountNo, serviceInstance.getExternalId());
+      boolean chargeMRC;
+      try {
+        chargeMRC = BillingUtil.checkChargeMRC(accountNo, serviceInstance.getExternalId());
+      } catch (BillingException e) {
+        chargeMRC = true;
+      }
+      int componentId = chargeMRC ? PROVISION.COMPONENT.INSTALL : PROVISION.COMPONENT.REINSTALL;
+      provisionService.removeComponent(accountNo, serviceInstance.getExternalId(), pkg.getInstanceId(), component.getInstanceId());
+      provisionService.addSingleComponent(accountNo, serviceInstance.getExternalId(), pkg.getInstanceId(), componentId);
+    }
+    if (!accountStatus.getDeviceStatus().equals("ACTIVE")) {
+      Device device = deviceService.getDevice(custId, deviceId, accountNo);
+      device.setStatusId(DeviceStatus.ID_ACTIVE);
+      device.setStatus(DeviceStatus.DESC_ACTIVE);
+      device.save();
+    }
+    if (!accountStatus.getNetworkStatus().equals("ACTIVE")) {
+      NetworkInfo networkInfo = getNetworkInfo(null, serviceInstance.getExternalId());
+      networkService.restoreService(networkInfo);
+    }
+  }
+
+  /**
+   * Adds the install/reinstall Component in Kenan to allow MRC, updates the
+   * Threshold to allow top-ups and then restores the device on the Network to
+   * allow usage.
+   * 
+   * @param custId
+   * @param accountNo
+   * @param deviceId
+   * @throws BillingException
+   * @throws ProvisionException
+   * @throws DeviceException
+   * @throws NetworkException
+   */
+  public void restoreAccount(int custId, int accountNo, int deviceId) throws BillingException, ProvisionException, DeviceException, NetworkException {
+    ServiceInstance serviceInstance = provisionService.getActiveService(accountNo);
+    Component component = provisionService.getActiveComponent(accountNo, serviceInstance.getExternalId());
+
+    // check if account is already active in kenan
+    if (component.getId() == PROVISION.COMPONENT.INSTALL || component.getId() == PROVISION.COMPONENT.REINSTALL) {
+      throw new ProvisionException("Account " + accountNo + " with MDN " + serviceInstance.getExternalId() + " is already active");
+    } else if (component.getId() != PROVISION.COMPONENT.SUSPEND) {
+      throw new ProvisionException("Account " + accountNo + " with MDN " + serviceInstance.getExternalId() + " is already suspended");
+    }
+
+    Device device = deviceService.getDevice(custId, deviceId, accountNo);
+    NetworkInfo deviceNetworkInfo = getNetworkInfo(device.getValue(), null);
+    NetworkInfo accountNetworkInfo = getNetworkInfo(null, serviceInstance.getExternalId());
+    NetworkInfoUtil.checkNetworkInfoMatch(deviceNetworkInfo, accountNetworkInfo);
+
+    // load package
+    Package pkg = provisionService.getActivePackage(accountNo);
+
+    // check if the user needs to be charged a pro-rated MRC for restoration
+    boolean chargeMRC;
+    try {
+      chargeMRC = BillingUtil.checkChargeMRC(accountNo, serviceInstance.getExternalId());
+    } catch (BillingException e) {
+      chargeMRC = true;
+    }
+
+    // first remove component and add active component to allow for usage
+    // tracking
+    int componentId = chargeMRC ? PROVISION.COMPONENT.INSTALL : PROVISION.COMPONENT.REINSTALL;
+    provisionService.removeComponent(accountNo, serviceInstance.getExternalId(), pkg.getInstanceId(), component.getInstanceId());
+    provisionService.addSingleComponent(accountNo, serviceInstance.getExternalId(), pkg.getInstanceId(), componentId);
+
+    // first update the service threshold to allow future top-ups
+    billService.updateServiceInstanceStatus(serviceInstance, PROVISION.SERVICE.RESTORE);
+
+    // finally restore the network to allow usage
+    networkService.restoreService(accountNetworkInfo);
+    device.setStatusId(DeviceStatus.ID_ACTIVE);
+    device.save();
+  }
+
   @Deprecated
-  @Override
-  @WebMethod
-  public void restoreService(ServiceInstance serviceInstance) {
+  private void restoreService(ServiceInstance serviceInstance) {
     LoggerHelper logHelper = new LoggerHelper("restoreService", serviceInstance);
     restoreSubscriber(serviceInstance, null);
     logHelper.logMethodExit();
@@ -1050,7 +1077,7 @@ public class TruConnect implements TscpMvne {
     logger.info("Restoring subscriber Network, Billing and Device if present");
     Account account = new Account();
     try {
-      account.setAccountno(billingSystem.getAccountNoByTN(serviceInstance.getExternalId()));
+      account.setAccountno(billService.getAccountNoByTN(serviceInstance.getExternalId()));
       if (account.getAccountno() == 0) {
         throw new WebServiceException("Unable to get account number for External ID " + serviceInstance.getExternalId());
       }
@@ -1070,11 +1097,11 @@ public class TruConnect implements TscpMvne {
       logger.info("MDN " + serviceInstance.getExternalId() + " is already in a restored state");
     } else {
       logger.info("Restoring service on the network");
-      networkSystem.restoreService(networkInfo);
+      networkService.restoreService(networkInfo);
     }
 
     logger.info("Updating Billing System with restored flag...");
-    billingSystem.updateServiceInstanceStatus(serviceInstance, PROVISION.SERVICE.RESTORE);
+    billService.updateServiceInstanceStatus(serviceInstance, PROVISION.SERVICE.RESTORE);
 
     if (deviceInfo != null) {
       logger.info("updating deviceInfo[" + deviceInfo.getId() + "] to AC - " + DeviceStatus.DESC_ACTIVE);
@@ -1121,7 +1148,7 @@ public class TruConnect implements TscpMvne {
     logger.info("Preparing Failed Notification message");
     if (account.getFirstname() == null || account.getLastname() == null || account.getContact_email() == null) {
       logger.info("Binding account information");
-      account = billingSystem.getAccountByAccountNo(account.getAccountno());
+      account = billService.getAccountByAccountNo(account.getAccountno());
     }
     if (account.getContact_email() == null || account.getContact_email().trim().isEmpty()) {
       account.setContact_email("support@truconnect.com");
@@ -1165,7 +1192,7 @@ public class TruConnect implements TscpMvne {
 
     if (account.getFirstname() == null || account.getLastname() == null || account.getContact_email() == null) {
       logger.info("Binding account information");
-      account = billingSystem.getAccountByAccountNo(account.getAccountno());
+      account = billService.getAccountByAccountNo(account.getAccountno());
     }
     assert account.getContact_email() != null : "Email is blank";
 
@@ -1340,7 +1367,7 @@ public class TruConnect implements TscpMvne {
     }
     if (account.getFirstname() == null || account.getFirstname().trim().isEmpty() || account.getLastname() == null || account.getLastname().trim().isEmpty()
         || account.getContact_email() == null || account.getContact_email().trim().isEmpty()) {
-      account = billingSystem.getAccountByAccountNo(account.getAccountno());
+      account = billService.getAccountByAccountNo(account.getAccountno());
     }
     if (account.getFirstname() == null || account.getFirstname().trim().isEmpty() || account.getLastname() == null || account.getLastname().trim().isEmpty()
         || account.getContact_email() == null || account.getContact_email().trim().isEmpty()) {
@@ -1390,6 +1417,132 @@ public class TruConnect implements TscpMvne {
     CustTopUp topUp = customer.setTopupAmount(account, topUpAmount);
     logHelper.logMethodReturn(topUp);
     return topUp;
+  }
+
+  /**
+   * Use submitPaymentByaymentId as all credit cards should be saved in the
+   * database.
+   * 
+   * @param sessionId
+   * @param account
+   * @param creditCard
+   * @param paymentAmount
+   * @return
+   */
+  @Deprecated
+  @WebMethod
+  public PaymentUnitResponse submitPaymentByCreditCard(String sessionId, Account account, CreditCard creditCard, String paymentAmount) {
+    LoggerHelper logHelper = new LoggerHelper("makeCreditCardPayment", sessionId, account, creditCard, paymentAmount);
+    if (creditCard == null) {
+      logger.warn("SessionId " + sessionId + ":: CreditCard Information must be present to submit a CreditCard Payment");
+      throw new PaymentException("makeCreditCardPayment", "CreditCard Information must be present to submit a CreditCard Payment");
+    }
+    if (paymentAmount == null || paymentAmount.indexOf(".") == 0) {
+      logger.warn("Invalid payment format. Payment format needs to be \"xxx.xx\" ");
+      throw new PaymentException("makeCreditCardPayment", "Invalid payment format. Payment format needs to be \"xxx.xx\" ");
+    }
+    if (account == null || account.getAccountno() <= 0) {
+      logger.warn("Invalid Account Object. Account must be specified when making payments...");
+      throw new BillingException("makeCreditCardPayment", "Invalid Account Object. Account must be specified when making payments...");
+    }
+    creditCard.validate();
+    logger.info("Account " + account.getAccountno() + " is attempting to make a " + paymentAmount + " payment against Credit Card ending in "
+        + creditCard.getCreditCardNumber().subSequence(creditCard.getCreditCardNumber().length() - 4, creditCard.getCreditCardNumber().length()));
+
+    logger.info("Creating Transaction...");
+    // Create Transaction
+    PaymentTransaction pmttransaction = new PaymentTransaction();
+    pmttransaction.setSessionId(sessionId);
+    pmttransaction.setPmtId(creditCard.getPaymentid());
+    pmttransaction.setPaymentAmount(paymentAmount);
+    pmttransaction.setAccountNo(account.getAccountno());
+
+    pmttransaction.savePaymentTransaction();
+    logger.info("Transaction " + pmttransaction.getTransId() + " has been entered and is beginning");
+
+    // Submit to payment unit
+    logger.info("submitting creditcard payment");
+    PaymentUnitResponse response = creditCard.submitPayment(pmttransaction);
+    if (response != null) {
+      logger.info(response.toString());
+    } else {
+      response = new PaymentUnitResponse();
+      response.setConfcode("-1");
+      response.setTransid("000000");
+      response.setConfdescr("No response returned from payment unit");
+      response.setAuthcode("System generated error input");
+    }
+
+    // update transaction
+    pmttransaction.setPaymentUnitConfirmation(response.getConfirmationString());
+    pmttransaction.setPaymentUnitMessage(response.getConfdescr() + " AuthCode::" + response.getAuthcode());
+    pmttransaction.setPaymentUnitDate(new Date());
+    String paymentMethod = "unknown";
+    String paymentSource = "";
+    if (creditCard.getCreditCardNumber().substring(0, 1).equals(CreditCard.CREDITCARD_AMEX)) {
+      paymentMethod = "AmericanExpress";
+      // paymentSource = "3XXX-XXXXXX-X";
+    } else if (creditCard.getCreditCardNumber().substring(0, 1).equals(CreditCard.CREDITCARD_VISA)) {
+      paymentMethod = "Visa";
+      // paymentSource = "4XXX-XXXX-XXXX-";
+    } else if (creditCard.getCreditCardNumber().substring(0, 1).equals(CreditCard.CREDITCARD_MASTERCARD)) {
+      paymentMethod = "MasterCard";
+      // paymentSource = "6XXX-XXXX-XXXX-";
+    } else if (creditCard.getCreditCardNumber().substring(0, 1).equals(CreditCard.CREDITCARD_DISCOVER)) {
+      paymentMethod = "Discover";
+      // paymentSource = "6XXX-XXXX-XXXX-";
+    }
+    paymentSource += creditCard.getCreditCardNumber().substring(creditCard.getCreditCardNumber().length() - 4, creditCard.getCreditCardNumber().length());
+    pmttransaction.setPaymentMethod(paymentMethod);
+    pmttransaction.setPaymentSource(paymentSource);
+    pmttransaction.savePaymentTransaction();
+
+    if (response.getConfcode().equals(PaymentUnitResponse.SUCCESSFUL_TRANSACTION)) {
+      // Submit to Kenan
+      logger.info("adding payment information to Kenan...");
+      billService.addPayment(account, paymentAmount.replace(".", ""));
+
+      // get the tracking ID from Kenan, it should be the last entry in the list
+      // of payments
+      logger.info("retrieving payment list from Kenan");
+      List<PaymentHolder> paymentList = billService.getPaymentHistory(account);
+      if (paymentList != null && paymentList.size() > 0) {
+        try {
+          Payment payment = null;
+          for (PaymentHolder paymentHolder : paymentList) {
+            if (payment == null) {
+              payment = paymentHolder.getPayment();
+            }
+            if (payment.getTrackingId() <= paymentHolder.getPayment().getTrackingId()) {
+              payment = paymentHolder.getPayment();
+            }
+          }
+          logger.info("Latest Billing Tracking ID found to be " + payment.getTrackingId());
+          pmttransaction.setBillingTrackingId(payment.getTrackingId());
+          // PaymentHolder paymentHolder =
+          // paymentList.get(paymentList.size()-1);
+          // logger.info("Latest Billing Tracking ID found to be "+paymentHolder.getPayment().getTrackingId());
+          // pmttransaction.setBillingTrackingId(paymentHolder.getPayment().getTrackingId());
+        } catch (ArrayIndexOutOfBoundsException index_ex) {
+          logger.warn(index_ex.getMessage() + "...error retrieving payment item index at [" + (paymentList.size() - 1) + "]");
+          pmttransaction.setBillingTrackingId(-1);
+        } catch (NullPointerException np_ex) {
+          logger.warn(np_ex.getMessage() + "...payment is null.");
+          pmttransaction.setBillingTrackingId(-1);
+        }
+
+      }
+
+      // update transaction
+      pmttransaction.setBillingUnitDate(new Date());
+      pmttransaction.savePaymentTransaction();
+      logger.info("Transaction information saved and payment completed for Account " + account.getAccountno() + ".");
+    } else {
+      logger.warn("Error posting credit card payment. :: " + response.getConfdescr() + " " + response.getAuthcode());
+      throw new PaymentException("makeCreditCardPayment", "Error posting credit card payment. :: " + response.getConfdescr() + " " + response.getAuthcode());
+    }
+    logHelper.logMethodExit();
+    return response;
   }
 
   @WebMethod
@@ -1500,11 +1653,11 @@ public class TruConnect implements TscpMvne {
     if (response.getConfcode().equals(PaymentUnitResponse.SUCCESSFUL_TRANSACTION)) {
       // Submit to Kenan
       logger.info("adding payment information to Kenan...");
-      billingSystem.addPayment(account, paymentAmount.replace(".", ""));
+      billService.addPayment(account, paymentAmount.replace(".", ""));
 
       // get the tracking ID from Kenan, it should be the first entry in the
       // list of payments
-      List<PaymentHolder> paymentList = billingSystem.getCompletePaymentHistory(account);
+      List<PaymentHolder> paymentList = billService.getPaymentHistory(account);
       if (paymentList != null && !paymentList.isEmpty()) {
         Payment payment = null;
         try {
@@ -1534,7 +1687,7 @@ public class TruConnect implements TscpMvne {
 
       // send pmt notification
       logger.info("Sending Top-Up notification");
-      sendPaymentNotification(customer, account, pmttransaction);
+      // sendPaymentNotification(customer, account, pmttransaction);
 
       // get device information
       logger.info("getting device information for update");
@@ -1545,7 +1698,7 @@ public class TruConnect implements TscpMvne {
 
       // update service instances with new cleared threshold value
       logger.info("Updating service instances for account " + account.getAccountno());
-      Account loadedAccount = billingSystem.getAccountByAccountNo(account.getAccountno());
+      Account loadedAccount = billService.getAccountByAccountNo(account.getAccountno());
       for (ServiceInstance serviceInstance : loadedAccount.getServiceinstancelist()) {
         for (Device tempDeviceInfo : deviceInfoList) {
           logger.info("Iterating through deviceInfoList");
@@ -1569,7 +1722,7 @@ public class TruConnect implements TscpMvne {
         // restoreSubscriber(serviceInstance, deviceInfo);
         if (deviceInfo != null && accountStatus != null) {
           if (!accountStatus.getBillingStatus().equals("SUSPEND")) {
-            throw new BillingException("Account " + account.getAccountno() + " already has SUSPEND component");
+            throw new BillingException("Account " + account.getAccountno() + " does not have SUSPEND component in Kenan");
           } else if (!accountStatus.getNetworkStatus().equals("SUSPEND")) {
             throw new NetworkException("Device is already active on network");
           }
@@ -1588,7 +1741,7 @@ public class TruConnect implements TscpMvne {
 
         // send payment failed notification
         logger.info("Sending Payment Failed notification");
-        sendPaymentFailedNotification(customer, account, pmttransaction);
+        // sendPaymentFailedNotification(customer, account, pmttransaction);
 
         // get device information
         logger.info("getting device information for update");
@@ -1599,7 +1752,7 @@ public class TruConnect implements TscpMvne {
 
         // suspend services
         logger.info("Loading account information from Billing System...");
-        Account loadedAccount = billingSystem.getAccountByAccountNo(account.getAccountno());
+        Account loadedAccount = billService.getAccountByAccountNo(account.getAccountno());
         logger.info("Updating service instances for account " + account.getAccountno());
         for (ServiceInstance serviceInstance : loadedAccount.getServiceinstancelist()) {
           logger
@@ -1625,12 +1778,13 @@ public class TruConnect implements TscpMvne {
               }
             }
           }
+
           // suspendSubscriber(serviceInstance, deviceInfo);
           if (deviceInfo != null && accountStatus != null) {
-            if (!accountStatus.getBillingStatus().equals("SUSPEND")) {
+            if (accountStatus.getBillingStatus().equals("SUSPEND")) {
               throw new BillingException("Account " + account.getAccountno() + " already has SUSPEND component");
-            } else if (!accountStatus.getNetworkStatus().equals("SUSPEND")) {
-              throw new NetworkException("Device is already active on network");
+            } else if (accountStatus.getNetworkStatus().equals("SUSPEND")) {
+              throw new NetworkException("Device is already suspended on network");
             }
             suspendAccount(customer.getId(), account.getAccountno(), deviceInfo.getId());
           } else {
@@ -1681,146 +1835,20 @@ public class TruConnect implements TscpMvne {
     Package pkg = provisionService.getActivePackage(accountNo);
 
     // first suspend the network to prevent further usage
-    networkSystem.suspendService(accountNetworkInfo);
+    networkService.suspendService(accountNetworkInfo);
 
     // next remove component and add suspend component to prevent future MRCs
     provisionService.removeComponent(accountNo, serviceInstance.getExternalId(), pkg.getInstanceId(), component.getInstanceId());
     provisionService.addSingleComponent(accountNo, serviceInstance.getExternalId(), pkg.getInstanceId(), PROVISION.COMPONENT.SUSPEND);
 
     // finally update the service threshold to prevent future top-ups
-    billingSystem.updateServiceInstanceStatus(serviceInstance, PROVISION.SERVICE.HOTLINE);
+    billService.updateServiceInstanceStatus(serviceInstance, PROVISION.SERVICE.HOTLINE);
     device.setStatusId(DeviceStatus.ID_RELEASED_SYSTEM_REACTIVATE);
     device.save();
   }
 
-  /**
-   * Adds the install/reinstall Component in Kenan to allow MRC, updates the
-   * Threshold to allow top-ups and then restores the device on the Network to
-   * allow usage.
-   * 
-   * @param custId
-   * @param accountNo
-   * @param deviceId
-   * @throws BillingException
-   * @throws ProvisionException
-   * @throws DeviceException
-   * @throws NetworkException
-   */
-  public void restoreAccount(int custId, int accountNo, int deviceId) throws BillingException, ProvisionException, DeviceException, NetworkException {
-    ServiceInstance serviceInstance = provisionService.getActiveService(accountNo);
-    Component component = provisionService.getActiveComponent(accountNo, serviceInstance.getExternalId());
-
-    // check if account is already active in kenan
-    if (component.getId() == PROVISION.COMPONENT.INSTALL || component.getId() == PROVISION.COMPONENT.REINSTALL) {
-      throw new ProvisionException("Account " + accountNo + " with MDN " + serviceInstance.getExternalId() + " is already active");
-    } else if (component.getId() != PROVISION.COMPONENT.SUSPEND) {
-      throw new ProvisionException("Account " + accountNo + " with MDN " + serviceInstance.getExternalId() + " is already suspended");
-    }
-
-    Device device = deviceService.getDevice(custId, deviceId, accountNo);
-    NetworkInfo deviceNetworkInfo = getNetworkInfo(device.getValue(), null);
-    NetworkInfo accountNetworkInfo = getNetworkInfo(null, serviceInstance.getExternalId());
-    NetworkInfoUtil.checkNetworkInfoMatch(deviceNetworkInfo, accountNetworkInfo);
-
-    // load package
-    Package pkg = provisionService.getActivePackage(accountNo);
-
-    // check if the user needs to be charged a pro-rated MRC for restoration
-    boolean chargeMRC;
-    try {
-      chargeMRC = BillingUtil.checkChargeMRC(accountNo, serviceInstance.getExternalId());
-    } catch (BillingException e) {
-      chargeMRC = true;
-    }
-
-    // first remove component and add active component to allow for usage
-    // tracking
-    int componentId = chargeMRC ? PROVISION.COMPONENT.INSTALL : PROVISION.COMPONENT.REINSTALL;
-    provisionService.removeComponent(accountNo, serviceInstance.getExternalId(), pkg.getInstanceId(), component.getInstanceId());
-    provisionService.addSingleComponent(accountNo, serviceInstance.getExternalId(), pkg.getInstanceId(), componentId);
-
-    // first update the service threshold to allow future top-ups
-    billingSystem.updateServiceInstanceStatus(serviceInstance, PROVISION.SERVICE.RESTORE);
-
-    // finally restore the network to allow usage
-    networkSystem.restoreService(accountNetworkInfo);
-    device.setStatusId(DeviceStatus.ID_ACTIVE);
-    device.save();
-  }
-
-  /**
-   * Temporary "lightweight" method to get the full state of the account.
-   * 
-   * @param custId
-   * @param accountNo
-   * @param deviceId
-   * @return
-   */
-  public AccountStatus getAccountStatus(int custId, int accountNo, Device device, String externalId) throws DeviceException, NetworkException,
-      ProvisionException {
-    AccountStatus accountStatus = new AccountStatus();
-
-    // get device status
-    accountStatus.setDeviceStatus(device.getStatus());
-
-    // get network status
-    NetworkInfo networkInfo = getNetworkInfo(device.getValue(), null);
-    if (networkInfo != null && networkInfo.getStatus() != null) {
-      if (networkInfo.getStatus().equals("A")) {
-        accountStatus.setNetworkStatus("ACTIVE");
-      } else if (networkInfo.getStatus().equals("C")) {
-        accountStatus.setNetworkStatus("CANCEL");
-      } else if (networkInfo.getStatus().equals("S")) {
-        accountStatus.setNetworkStatus("SUSPEND");
-      } else if (networkInfo.getStatus().equals("R")) {
-        accountStatus.setNetworkStatus("RESERVE");
-      }
-    }
-
-    // get billing status
-    Component component = provisionService.getActiveComponent(accountNo, externalId);
-    if (component.getId() == 500000) {
-      accountStatus.setBillingStatus("ACTIVE");
-    } else if (component.getId() == 500001) {
-      accountStatus.setBillingStatus("REINSTALL");
-    } else if (component.getId() == 500002) {
-      accountStatus.setBillingStatus("SUSPEND");
-    }
-
-    return accountStatus;
-  }
-
-  /**
-   * Temporary "lightweight" method to get the full state of the account.
-   * 
-   * @param custId
-   * @param accountNo
-   * @param deviceId
-   * @return
-   */
-  public AccountStatus getAccountStatus(int custId, int accountNo, int deviceId, String externalId) throws DeviceException, NetworkException,
-      ProvisionException {
-    Device device = deviceService.getDevice(custId, deviceId, accountNo);
-    return getAccountStatus(custId, accountNo, device, externalId);
-  }
-
-  /**
-   * Temporary "lightweight" method to get the full state of the account.
-   * 
-   * @param custId
-   * @param accountNo
-   * @param deviceId
-   * @return
-   */
-  public AccountStatus getAccountStatus(int custId, int accountNo, int deviceId) throws DeviceException, NetworkException, ProvisionException {
-    ServiceInstance serviceInstance = provisionService.getActiveService(accountNo);
-    return getAccountStatus(custId, accountNo, deviceId, serviceInstance.getExternalId());
-  }
-
   @Deprecated
-  @Override
-  @WebMethod
-  public void suspendService(ServiceInstance serviceInstance) {
+  private void suspendService(ServiceInstance serviceInstance) {
     LoggerHelper logHelper = new LoggerHelper("suspendService", serviceInstance);
     suspendSubscriber(serviceInstance, null);
     logHelper.logMethodExit();
@@ -1831,7 +1859,7 @@ public class TruConnect implements TscpMvne {
     logger.info("Suspending subscriber Network, Billing and Device if present");
     Account account = new Account();
     try {
-      account.setAccountno(billingSystem.getAccountNoByTN(serviceInstance.getExternalId()));
+      account.setAccountno(billService.getAccountNoByTN(serviceInstance.getExternalId()));
       if (account.getAccountno() == 0) {
         throw new WebServiceException("Unable to get account number for External ID " + serviceInstance.getExternalId());
       }
@@ -1852,7 +1880,7 @@ public class TruConnect implements TscpMvne {
           logger.info("Device " + networkInfo.getEsnmeiddec() + " is already suspended on the Network...skipping");
         } else if (networkInfo.getStatus().equals(DEVICE.ACTIVE)) {
           logger.info("Suspending Service on the Network");
-          networkSystem.suspendService(networkInfo);
+          networkService.suspendService(networkInfo);
         } else {
           throw new NetworkException("MDN is not in a suspendable state!");
         }
@@ -1864,7 +1892,7 @@ public class TruConnect implements TscpMvne {
     }
 
     logger.info("Updating Billing System with Hotlined Status " + PROVISION.SERVICE.HOTLINE);
-    billingSystem.updateServiceInstanceStatus(serviceInstance, PROVISION.SERVICE.HOTLINE);
+    billService.updateServiceInstanceStatus(serviceInstance, PROVISION.SERVICE.HOTLINE);
 
     int accountNumber = account.getAccountno();
     Component component = provisionService.getActiveComponent(accountNumber, serviceInstance.getExternalId());
@@ -1935,7 +1963,7 @@ public class TruConnect implements TscpMvne {
       try {
         // Send the swap request to the network
         logger.info("Sending swap request for MDN " + oldNetworkInfo.getMdn() + " to DEVICE " + newDevice.getValue());
-        networkSystem.swapESN(oldNetworkInfo, newNetworkInfo);
+        networkService.swapESN(oldNetworkInfo, newNetworkInfo);
 
         // Save deviceInfo
         logger.info("Saving new device information");
@@ -1962,7 +1990,7 @@ public class TruConnect implements TscpMvne {
       throw new BillingException("Account object cannot be null.");
     }
     logger.info("Updating EmailAddress for Account " + account.getAccountno() + " to email address " + account.getContact_email());
-    billingSystem.updateAccountEmailAddress(account);
+    billService.updateAccountEmailAddress(account);
     logHelper.logMethodExit();
   }
 

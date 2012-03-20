@@ -7,8 +7,8 @@ import java.net.URL;
 import javax.xml.namespace.QName;
 import javax.xml.ws.WebServiceException;
 
-import com.tscp.mvne.network.NetworkSystem;
 import com.tscp.mvne.network.NetworkInfo;
+import com.tscp.mvne.network.service.NetworkService;
 import com.tscp.mvno.webservices.API3;
 import com.tscp.mvno.webservices.API3Service;
 import com.tscp.mvno.webservices.ApiResellerSubInquiryResponseHolder;
@@ -95,7 +95,7 @@ public class SprintAPITester {
     // System.out.println("APIMessage         :: "+response.getApiResponseMessage());
     // System.out.println("ResponseMessage    :: "+response.getResponseMessage());
 
-    NetworkSystem networkImpl = new NetworkSystem();
+    NetworkService networkImpl = new NetworkService();
 
     NetworkInfo networkInfo = networkImpl.getNetworkInfo(null, MDN);
     // System.out.println("MDN      :: "+networkInfo.getMdn());
@@ -113,7 +113,7 @@ public class SprintAPITester {
   }
 
   public void reserveMdn() {
-    NetworkSystem networkImpl = new NetworkSystem();
+    NetworkService networkImpl = new NetworkService();
     NetworkInfo networkInfo = networkImpl.reserveMDN(null, null, null);
 
     if (networkInfo != null) {
@@ -127,7 +127,7 @@ public class SprintAPITester {
   }
 
   public void activateMdn() {
-    NetworkSystem networkImpl = new NetworkSystem();
+    NetworkService networkImpl = new NetworkService();
     NetworkInfo networkInfo = new NetworkInfo();
 
     networkInfo.setMdn("2138041391");

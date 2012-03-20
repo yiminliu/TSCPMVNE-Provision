@@ -8,7 +8,7 @@ import org.hibernate.Transaction;
 import org.hibernate.classic.Session;
 
 import com.tscp.mvne.billing.Account;
-import com.tscp.mvne.billing.ServiceInstance;
+import com.tscp.mvne.billing.provisioning.ServiceInstance;
 import com.tscp.mvne.contract.KenanContract;
 import com.tscp.mvne.customer.dao.GeneralSPResponse;
 import com.tscp.mvne.exception.DaoException;

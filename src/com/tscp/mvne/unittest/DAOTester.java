@@ -14,8 +14,8 @@ import org.hibernate.classic.Session;
 import com.telscape.billingserviceinterface.BillName;
 import com.telscape.billingserviceinterface.CustAddress;
 import com.tscp.mvne.billing.Account;
-import com.tscp.mvne.billing.Component;
-import com.tscp.mvne.billing.ServiceInstance;
+import com.tscp.mvne.billing.provisioning.Component;
+import com.tscp.mvne.billing.provisioning.ServiceInstance;
 import com.tscp.mvne.billing.usage.UsageDetail;
 import com.tscp.mvne.customer.Customer;
 import com.tscp.mvne.customer.dao.CustAcctMapDAO;
@@ -25,7 +25,7 @@ import com.tscp.mvne.device.DeviceAssociation;
 import com.tscp.mvne.device.DeviceStatus;
 import com.tscp.mvne.hibernate.HibernateUtil;
 import com.tscp.mvne.network.NetworkInfo;
-import com.tscp.mvne.network.NetworkSystem;
+import com.tscp.mvne.network.service.NetworkService;
 import com.tscp.mvne.payment.PaymentInformation;
 import com.tscp.mvne.payment.PaymentType;
 import com.tscp.mvne.payment.dao.CreditCard;
@@ -140,7 +140,7 @@ public class DAOTester {
     session.getTransaction().commit();
     if (reservedMDNList != null && reservedMDNList.size() > 0) {
       for (ReservedMDN reservedMDN : reservedMDNList) {
-        NetworkSystem networkImpl = new NetworkSystem();
+        NetworkService networkImpl = new NetworkService();
         try {
           NetworkInfo networkInfo = new NetworkInfo();
           networkInfo.setMdn(reservedMDN.getMDN());
@@ -433,8 +433,8 @@ public class DAOTester {
     Query q = session.getNamedQuery("get_active_packages");
     q.setParameter("in_username", "username");
     q.setParameter("in_account_no", 684806);
-    List<com.tscp.mvne.billing.Package> packageList = q.list();
-    for (com.tscp.mvne.billing.Package acctPackage : packageList) {
+    List<com.tscp.mvne.billing.provisioning.Package> packageList = q.list();
+    for (com.tscp.mvne.billing.provisioning.Package acctPackage : packageList) {
       System.out.println("PackageId   :: " + acctPackage.getId());
       System.out.println("PackageName :: " + acctPackage.getName());
       System.out.println("PackageInstanceId :: " + acctPackage.getInstanceId());

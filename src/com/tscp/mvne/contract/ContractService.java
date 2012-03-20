@@ -4,7 +4,7 @@ import java.util.Date;
 import java.util.List;
 
 import com.tscp.mvne.billing.Account;
-import com.tscp.mvne.billing.ServiceInstance;
+import com.tscp.mvne.billing.provisioning.ServiceInstance;
 import com.tscp.mvne.contract.dao.KenanContractDao;
 import com.tscp.mvne.contract.exception.ContractException;
 

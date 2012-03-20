@@ -1,6 +1,6 @@
 package com.tscp.mvne.unittest;
 
-import com.tscp.mvne.logger.TscpmvneLogger;
+import com.tscp.mvne.util.logger.TscpmvneLogger;
 
 public class Log4jTester {
   static final TscpmvneLogger logger = new TscpmvneLogger();
