@@ -22,7 +22,7 @@ import com.tscp.mvne.exception.InitializationException;
  * 
  */
 public final class BillingGatewayProvider {
-  private static final Logger logger = LoggerFactory.getLogger("TSCPMVNELogger");
+  private static final Logger logger = LoggerFactory.getLogger("TSCPMVNE");
   private static final BillingServiceInterface serviceInterface = loadInterface();
   private static final BillingServiceInterfaceSoap port = serviceInterface.getBillingServiceInterfaceSoap();
 

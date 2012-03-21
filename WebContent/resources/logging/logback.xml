@@ -6,15 +6,15 @@
     <!-- encoders are assigned by default the type ch.qos.logback.classic.encoder.PatternLayoutEncoder -->
     <encoder>
       <pattern>
-        %d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %X{sessionId} %X{username} %msg%n
+        %d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
       </pattern>
     </encoder>
   </appender>
 
   <appender name="ROLLINGFILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <File>../logs/TSCPMVNE_dev.log</File>
+    <File>../logs/TSCPMVNE.log</File>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-      <FileNamePattern>../logs/TSCPMVNE/TSCPMVNE_dev.%d{yyyy-MM-dd}.%i.log.zip</FileNamePattern>
+      <FileNamePattern>../logs/TSCPMVNE/TSCPMVNE.%d{yyyy-MM-dd}.%i.log.zip</FileNamePattern>
       <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
         <maxFileSize>5MB</maxFileSize>
       </timeBasedFileNamingAndTriggeringPolicy>
@@ -24,7 +24,7 @@
     </encoder>
   </appender>
 
-  <logger name="TSCPMVNELogger" level="ALL">
+  <logger name="TSCPMVNE" level="ALL">
     <appender-ref ref="ROLLINGFILE" />
   </logger>
 

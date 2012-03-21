@@ -16,6 +16,9 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.telscape.billingserviceinterface.ArrayOfMessageHolder;
 import com.telscape.billingserviceinterface.ArrayOfPackage;
 import com.telscape.billingserviceinterface.ArrayOfPaymentHolder;
@@ -43,18 +46,17 @@ import com.tscp.mvne.billing.Account;
 import com.tscp.mvne.billing.provisioning.ServiceInstance;
 import com.tscp.mvne.billing.service.BillService;
 import com.tscp.mvne.payment.dao.PaymentTransaction;
-import com.tscp.mvne.util.logger.TscpmvneLogger;
 
 public class BillingTester {
   BillService billingImpl;
   BillingService billingservice;
   // Logger logger;
-  TscpmvneLogger logger;
+  Logger logger;
 
   BillingServiceInterfaceSoap port;
 
   public BillingTester() {
-    logger = new TscpmvneLogger();
+    logger = LoggerFactory.getLogger("TSCPMVNE");
     // logger = LoggerFactory.getLogger("tscpmvneLogger");
     // logger.setUseParentHandlers(false);
 

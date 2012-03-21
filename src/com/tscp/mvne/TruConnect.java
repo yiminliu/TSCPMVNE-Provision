@@ -71,13 +71,12 @@ import com.tscp.mvne.payment.dao.PaymentTransaction;
 import com.tscp.mvne.payment.dao.PaymentUnitResponse;
 import com.tscp.mvne.refund.KenanPayment;
 import com.tscp.mvne.refund.RefundService;
-import com.tscp.mvne.util.logger.LoggerHelper;
-import com.tscp.mvne.util.logger.TscpmvneLogger;
+import com.tscp.mvne.util.logger.MethodLogger;
 
 @WebService
 public class TruConnect {
-  private static Logger logbackLogger = LoggerFactory.getLogger("TSCPMVNELogger");
-  private static TscpmvneLogger logger;
+  private static Logger logger = LoggerFactory.getLogger("TSCPMVNE");
+  // private static TscpmvneLogger logger;
   private static NetworkService networkService;
   private static BillService billService;
   private static ContractService contractService;
@@ -91,7 +90,7 @@ public class TruConnect {
 
   @WebMethod
   public NetworkInfo activateService(Customer customer, NetworkInfo networkInfo) {
-    LoggerHelper logHelper = new LoggerHelper("activateService", customer, networkInfo);
+    MethodLogger.logMethod("activateService", customer, networkInfo);
     networkService.activateMDN(networkInfo);
     try {
       logger.info("Attempting to update device information to active");
@@ -112,18 +111,18 @@ public class TruConnect {
       logger.info("Error updating device information in activation method ");
       logger.warn(ex.getMessage());
     }
-    logHelper.logMethodReturn(networkInfo);
+    MethodLogger.logMethodReturn("activateService", networkInfo);
     return networkInfo;
   }
 
   @WebMethod
   public CreditCard addCreditCard(Customer customer, CreditCard creditCard) {
-    LoggerHelper logHelper = new LoggerHelper("addCreditCard", customer, creditCard);
+    MethodLogger.logMethod("addCreditCard", customer, creditCard);
     if (creditCard.getPaymentid() != 0) {
       throw new PaymentException("addCreditCard", "PaymentID must be 0 when adding a payment");
     }
     CreditCard insertedCreditCard = customer.insertCreditCardPaymentInformation(creditCard);
-    logHelper.logMethodReturn(insertedCreditCard);
+    MethodLogger.logMethodReturn("addCreditCard", insertedCreditCard);
     return insertedCreditCard;
   }
 
@@ -144,7 +143,7 @@ public class TruConnect {
 
   @WebMethod
   public Device addDeviceInfoObject(Customer customer, Device device) {
-    LoggerHelper logHelper = new LoggerHelper("addDeviceInfoObject", customer, device);
+    MethodLogger.logMethod("addDeviceInfoObject", customer, device);
     if (customer == null) {
       throw new CustomerException("Customer information must be populated");
     }
@@ -162,32 +161,32 @@ public class TruConnect {
       throw new CustomerException("Cannot save a device to a different customer");
     }
     device.save();
-    logHelper.logMethodReturn(device);
+    MethodLogger.logMethodReturn("addDeviceInfoObject", device);
     return device;
   }
 
   @WebMethod
   public void applyChargeCredit(CreditCard creditCard, String amount) {
-    LoggerHelper logHelper = new LoggerHelper("applyChargeCredit", creditCard, amount);
+    MethodLogger.logMethod("applyChargeCredit", creditCard, amount);
     refundService.applyChargeCredit(creditCard, amount);
-    logHelper.logMethodExit();
+    MethodLogger.logMethodExit("applyChargeCredit");
   }
 
   @WebMethod
   public int applyContract(KenanContract contract) {
-    LoggerHelper logHelper = new LoggerHelper("applyContract", contract);
+    MethodLogger.logMethod("applyContract", contract);
     int contractId = contractService.applyContract(contract);
     logger.info("Contract " + contract.getContractType() + " applied for account " + contract.getAccount().getAccountno() + " on MDN "
         + contract.getServiceInstance().getExternalId());
-    logHelper.logMethodExit();
+    MethodLogger.logMethodExit("applyContract");
     return contractId;
   }
 
   @WebMethod
   public int applyCouponPayment(Account account, String amount, Date date) {
-    LoggerHelper logHelper = new LoggerHelper("applyCouponPayment", account, amount, date);
+    MethodLogger.logMethod("applyCouponPayment", account, amount, date);
     int trackingId = contractService.applyCouponPayment(account, amount, date);
-    logHelper.logMethodExit();
+    MethodLogger.logMethodExit("applyCouponPayment");
     return trackingId;
   }
 
@@ -206,7 +205,7 @@ public class TruConnect {
 
   @WebMethod
   public Account createBillingAccount(Customer customer, Account account) {
-    LoggerHelper logHelper = new LoggerHelper("createBillingAccount", customer, account);
+    MethodLogger.logMethod("createBillingAccount", customer, account);
     if (customer == null || customer.getId() <= 0) {
       throw new WebServiceException("Please specify a customer prior to adding an account.");
     }
@@ -216,12 +215,12 @@ public class TruConnect {
     } else {
       customer.addCustAccts(account);
     }
-    logHelper.logMethodReturn(account);
+    MethodLogger.logMethodReturn("createBillingAccount", account);
     return account;
   }
 
   private void createReinstallServiceInstance(Account account, ServiceInstance serviceInstance, Device deviceInfo) {
-    LoggerHelper logHelper = new LoggerHelper("createReinstallServiceInstance", account, serviceInstance, deviceInfo);
+    MethodLogger.logMethod("createReinstallServiceInstance", account, serviceInstance, deviceInfo);
     try {
       account.setServiceinstancelist(billService.getServiceInstanceList(account));
     } catch (BillingException bill_ex) {
@@ -268,12 +267,12 @@ public class TruConnect {
       logger.info("Error updating Device Association in createReinstallServiceInstance method");
       logger.warn(ex.getMessage());
     }
-    logHelper.logMethodExit();
+    MethodLogger.logMethodExit("createReinstallServiceInstance");
   }
 
   @WebMethod
   public Account createServiceInstance(Account account, ServiceInstance serviceInstance) {
-    LoggerHelper logHelper = new LoggerHelper("createServiceInstance", account, serviceInstance);
+    MethodLogger.logMethod("createServiceInstance", account, serviceInstance);
     try {
       account.setServiceinstancelist(billService.getServiceInstanceList(account));
     } catch (BillingException bill_ex) {
@@ -357,7 +356,7 @@ public class TruConnect {
       logger.info("Error updating Device Association in createServiceInstance method");
       logger.warn(ex.getMessage());
     }
-    logHelper.logMethodReturn(account);
+    MethodLogger.logMethodReturn("createServiceInstance", account);
     return account;
   }
 
@@ -369,12 +368,12 @@ public class TruConnect {
    */
   @WebMethod
   public List<CustPmtMap> deleteCreditCardPaymentMethod(Customer customer, int paymentId) {
-    LoggerHelper logHelper = new LoggerHelper("deleteCreditCardPaymentMethod", customer, paymentId);
+    MethodLogger.logMethod("deleteCreditCardPaymentMethod", customer, paymentId);
     if (paymentId == 0) {
       throw new PaymentException("deleteCreditCardPaymentMethod", "PaymentID cannot be 0 when deleting a payment");
     }
     customer.deletePayment(paymentId);
-    logHelper.logMethodExit();
+    MethodLogger.logMethodExit("deleteCreditCardPaymentMethod");
     return customer.getCustpmttypes(0);
   }
 
@@ -407,7 +406,7 @@ public class TruConnect {
 
   @WebMethod
   public List<Device> deleteDeviceInfoObject(Customer customer, Device deviceInfo) {
-    LoggerHelper logHelper = new LoggerHelper("deleteDeviceInfoObject", customer, deviceInfo);
+    MethodLogger.logMethod("deleteDeviceInfoObject", customer, deviceInfo);
     if (customer == null) {
       throw new CustomerException("Customer Information must be provided");
     }
@@ -417,7 +416,7 @@ public class TruConnect {
       throw new DeviceException("Invalid Device Id");
     }
     deviceInfo.delete();
-    logHelper.logMethodExit();
+    MethodLogger.logMethodExit("deleteDeviceInfoObject");
     return customer.retrieveDeviceList();
   }
 
@@ -439,7 +438,7 @@ public class TruConnect {
 
   @WebMethod
   public void disconnectService(ServiceInstance serviceInstance) {
-    LoggerHelper logHelper = new LoggerHelper("disconnectService", serviceInstance);
+    MethodLogger.logMethod("disconnectService", serviceInstance);
     logger.info("Calling Disconnect Service for External ID " + serviceInstance.getExternalId());
     Account account = new Account();
     logger.info("fetching account by TN");
@@ -493,7 +492,7 @@ public class TruConnect {
       logger.info("Error moving device information around");
       logger.warn(ex.getMessage());
     }
-    logHelper.logMethodExit();
+    MethodLogger.logMethodExit("Error moving device information around");
   }
 
   /**
@@ -509,9 +508,9 @@ public class TruConnect {
 
   @WebMethod
   public Account getAccountInfo(int accountNumber) {
-    LoggerHelper logHelper = new LoggerHelper("getAccountInfo", accountNumber);
+    MethodLogger.logMethod("getAccountInfo", accountNumber);
     Account account = billService.getAccountByAccountNo(accountNumber);
-    logHelper.logMethodReturn(account);
+    MethodLogger.logMethodReturn("getAccountInfo", account);
     return account;
   }
 
@@ -590,19 +589,19 @@ public class TruConnect {
 
   @WebMethod
   public List<KenanContract> getContracts(Account account, ServiceInstance serviceInstance) {
-    LoggerHelper logHelper = new LoggerHelper("getContracts", account, serviceInstance);
+    MethodLogger.logMethod("getContracts", account, serviceInstance);
     List<KenanContract> contracts = contractService.getContracts(account, serviceInstance);
-    logHelper.logMethodExit();
+    MethodLogger.logMethodExit("getContracts");
     return contracts;
   }
 
   @WebMethod
   public CreditCard getCreditCardDetail(int paymentId) {
-    LoggerHelper logHelper = new LoggerHelper("getCreditCardDetail", paymentId);
+    MethodLogger.logMethod("getCreditCardDetail", paymentId);
     CreditCard creditCard = new CreditCard();
     creditCard.setPaymentid(paymentId);
     creditCard.load();
-    logHelper.logMethodReturn(creditCard);
+    MethodLogger.logMethodReturn("getCreditCardDetail", creditCard);
     return creditCard;
   }
 
@@ -633,7 +632,7 @@ public class TruConnect {
 
   @WebMethod
   public List<CustAcctMapDAO> getCustomerAccounts(int customerId) {
-    LoggerHelper logHelper = new LoggerHelper("getCustomerAccounts", customerId);
+    MethodLogger.logMethod("getCustomerAccounts", customerId);
     Customer cust = new Customer();
     cust.setId(customerId);
     List<CustAcctMapDAO> custAcctList = cust.getCustaccts();
@@ -641,7 +640,7 @@ public class TruConnect {
     for (CustAcctMapDAO custAcct : custAcctList) {
       logger.info(custAcct.toString());
     }
-    logHelper.logMethodExit();
+    MethodLogger.logMethodExit("getCustomerAccounts");
     return custAcctList;
   }
 
@@ -660,7 +659,7 @@ public class TruConnect {
 
   @WebMethod
   public List<CustPmtMap> getCustPaymentList(int customerId, int paymentId) {
-    LoggerHelper logHelper = new LoggerHelper("getCustPaymentList", customerId, paymentId);
+    MethodLogger.logMethod("getCustPaymentList", customerId, paymentId);
     Customer cust = new Customer();
     cust.setId(customerId);
     List<CustPmtMap> custPaymentList = cust.getCustpmttypes(paymentId);
@@ -668,41 +667,41 @@ public class TruConnect {
     for (CustPmtMap custPmtMap : custPaymentList) {
       logger.info(custPmtMap.toString());
     }
-    logHelper.logMethodExit();
+    MethodLogger.logMethodExit("getCustPaymentList");
     return custPaymentList;
   }
 
   @WebMethod
   public CustTopUp getCustTopUpAmount(Customer customer, Account account) {
-    LoggerHelper logHelper = new LoggerHelper("getCustTopUpAmount", customer, account);
+    MethodLogger.logMethod("getCustTopUpAmount", customer, account);
     CustTopUp topUp = customer.getTopupAmount(account);
-    logHelper.logMethodReturn(topUp);
+    MethodLogger.logMethodReturn("getCustTopUpAmount", topUp);
     return topUp;
   }
 
   @WebMethod
   public List<Device> getDeviceList(Customer customer) {
-    LoggerHelper logHelper = new LoggerHelper("getDeviceList", customer);
+    MethodLogger.logMethod("getDeviceList", customer);
     if (customer == null || customer.getId() <= 0) {
       throw new CustomerException("Customer object must be provided");
     }
-    logHelper.logMethodExit();
+    MethodLogger.logMethodExit("getDeviceList");
     return customer.retrieveDeviceList();
   }
 
   @WebMethod
   public List<KenanPayment> getKenanPayments(Account account) {
-    LoggerHelper logHelper = new LoggerHelper("getKenanPayments", account);
+    MethodLogger.logMethod("getKenanPayments", account);
     List<KenanPayment> payments = refundService.getKenanPayments(account);
-    logHelper.logMethodExit();
+    MethodLogger.logMethodExit("getKenanPayments");
     return payments;
   }
 
   @WebMethod
   public NetworkInfo getNetworkInfo(String esn, String mdn) throws NetworkException {
-    LoggerHelper logHelper = new LoggerHelper("getNetworkInfo", esn, mdn);
+    MethodLogger.logMethod("getNetworkInfo", esn, mdn);
     NetworkInfo networkInfo = networkService.getNetworkInfo(esn, mdn);
-    logHelper.logMethodReturn(networkInfo);
+    MethodLogger.logMethodReturn("getNetworkInfo", networkInfo);
     return networkInfo;
   }
 
@@ -713,15 +712,15 @@ public class TruConnect {
 
   @WebMethod
   public NetworkInfo getSwapNetworkInfo(String esn, String mdn) {
-    LoggerHelper logHelper = new LoggerHelper("getSwapNetworkInfo", esn, mdn);
+    MethodLogger.logMethod("getSwapNetworkInfo", esn, mdn);
     NetworkInfo networkInfo = networkService.getSwapNetworkInfo(esn, mdn);
-    logHelper.logMethodReturn(networkInfo);
+    MethodLogger.logMethodReturn("getSwapNetworkInfo", networkInfo);
     return networkInfo;
   }
 
   @WebMethod
   public UsageSummary getUsageSummary(Customer customer, ServiceInstance serviceInstance) {
-    LoggerHelper logHelper = new LoggerHelper("getUsageSummary", serviceInstance);
+    MethodLogger.logMethod("getUsageSummary", serviceInstance);
     UsageSummary usage = new UsageSummary();
     try {
       List<CustAcctMapDAO> accountList = customer.getCustaccts();
@@ -772,13 +771,14 @@ public class TruConnect {
       logger.warn(ex.getMessage());
       throw ex;
     }
-    logHelper.logMethodExit();
+    MethodLogger.logMethodExit("getUsageSummary");
     return usage;
   }
 
   @WebMethod(exclude = true)
   public void init() {
-    logger = new TscpmvneLogger();
+    // logger = new TscpmvneLogger();
+    logger = LoggerFactory.getLogger("TSCPMVNE");
     networkService = new NetworkService();
     billService = new BillService();
     contractService = new ContractService();
@@ -789,6 +789,7 @@ public class TruConnect {
 
   @WebMethod
   public PaymentUnitResponse makePaymentById(String sessionId, int custId, int accountNo, int paymentId, String amount) {
+    logger.debug("makePayment called");
     Account account = getAccountInfo(accountNo);
     Customer customer = new Customer();
     customer.setId(custId);
@@ -839,7 +840,7 @@ public class TruConnect {
    */
   @WebMethod
   public NetworkInfo reinstallCustomerDevice(Customer customer, Device device) {
-    LoggerHelper logHelper = new LoggerHelper("reinstallCustomerDevice", customer, device);
+    MethodLogger.logMethod("reinstallCustomerDevice", customer, device);
     NetworkInfo networkInfo = new NetworkInfo();
     int accountNo = 0;
     String esn = "";
@@ -960,54 +961,22 @@ public class TruConnect {
 
     } catch (MVNEException mvne_ex) {
       logger.warn(mvne_ex.getMessage());
-      logHelper.logMethodExit();
+      MethodLogger.logMethodExit("reinstallCustomerDevice");
       throw mvne_ex;
     }
-    logHelper.logMethodReturn(networkInfo);
+    MethodLogger.logMethodReturn("reinstallCustomerDevice", networkInfo);
     return networkInfo;
   }
 
   @WebMethod
   public NetworkInfo reserveMDN() {
-    LoggerHelper logHelper = new LoggerHelper("reserveMdn");
+    MethodLogger.logMethod("reserveMdn");
     String csa = null;
     String priceplan = null;
     List<String> soclist = null;
     NetworkInfo networkInfo = networkService.reserveMDN(csa, priceplan, soclist);
-    logHelper.logMethodReturn(networkInfo);
+    MethodLogger.logMethodReturn("reserveMdn", networkInfo);
     return networkInfo;
-  }
-
-  // TODO this is a mockup function - accountStatus should contain all elements
-  // ServiceInstance, Package, Component, NetworkInfo and DeviceInfo. It should
-  // then audit the state of the
-  // account and repair it as needed
-  private void restoreAndRepairAccount(int custId, int accountNo, int deviceId) {
-    ServiceInstance serviceInstance = provisionService.getActiveService(accountNo);
-    AccountStatus accountStatus = getAccountStatus(custId, accountNo, deviceId, serviceInstance.getExternalId());
-    if (!accountStatus.getBillingStatus().equals("ACTIVE") || !accountStatus.getBillingStatus().equals("REINSTALL")) {
-      Package pkg = provisionService.getActivePackage(accountNo);
-      Component component = provisionService.getActiveComponent(accountNo, serviceInstance.getExternalId());
-      boolean chargeMRC;
-      try {
-        chargeMRC = BillingUtil.checkChargeMRC(accountNo, serviceInstance.getExternalId());
-      } catch (BillingException e) {
-        chargeMRC = true;
-      }
-      int componentId = chargeMRC ? PROVISION.COMPONENT.INSTALL : PROVISION.COMPONENT.REINSTALL;
-      provisionService.removeComponent(accountNo, serviceInstance.getExternalId(), pkg.getInstanceId(), component.getInstanceId());
-      provisionService.addSingleComponent(accountNo, serviceInstance.getExternalId(), pkg.getInstanceId(), componentId);
-    }
-    if (!accountStatus.getDeviceStatus().equals("ACTIVE")) {
-      Device device = deviceService.getDevice(custId, deviceId, accountNo);
-      device.setStatusId(DeviceStatus.ID_ACTIVE);
-      device.setStatus(DeviceStatus.DESC_ACTIVE);
-      device.save();
-    }
-    if (!accountStatus.getNetworkStatus().equals("ACTIVE")) {
-      NetworkInfo networkInfo = getNetworkInfo(null, serviceInstance.getExternalId());
-      networkService.restoreService(networkInfo);
-    }
   }
 
   /**
@@ -1023,6 +992,7 @@ public class TruConnect {
    * @throws DeviceException
    * @throws NetworkException
    */
+  @WebMethod
   public void restoreAccount(int custId, int accountNo, int deviceId) throws BillingException, ProvisionException, DeviceException, NetworkException {
     ServiceInstance serviceInstance = provisionService.getActiveService(accountNo);
     Component component = provisionService.getActiveComponent(accountNo, serviceInstance.getExternalId());
@@ -1067,9 +1037,9 @@ public class TruConnect {
 
   @Deprecated
   private void restoreService(ServiceInstance serviceInstance) {
-    LoggerHelper logHelper = new LoggerHelper("restoreService", serviceInstance);
+    MethodLogger.logMethod("restoreService", serviceInstance);
     restoreSubscriber(serviceInstance, null);
-    logHelper.logMethodExit();
+    MethodLogger.logMethodExit("restoreService");
   }
 
   @Deprecated
@@ -1113,9 +1083,9 @@ public class TruConnect {
 
   @WebMethod
   public void reverseKenanPayment(Account account, String amount, Date transDate, String trackingId) {
-    LoggerHelper logHelper = new LoggerHelper("reversePayment", account, amount, transDate, trackingId);
+    MethodLogger.logMethod("reversePayment", account, amount, transDate, trackingId);
     refundService.reversePayment(account, amount, transDate, trackingId);
-    logHelper.logMethodExit();
+    MethodLogger.logMethodExit("reversePayment");
   }
 
   @WebMethod
@@ -1184,7 +1154,7 @@ public class TruConnect {
     notificationSender.send(emailNotification);
   }
 
-  private void sendPaymentNotification(Customer customer, Account account, PaymentTransaction paymentTransaction) {
+  private void sendPaymentSuccessNotification(Customer customer, Account account, PaymentTransaction paymentTransaction) {
     assert customer != null && customer.getId() > 0 : "Customer invalid";
     assert account != null && account.getAccountno() > 0 : "Account invalid";
     logger.info("retrieving top up amount");
@@ -1413,9 +1383,9 @@ public class TruConnect {
 
   @WebMethod
   public CustTopUp setCustTopUpAmount(Customer customer, String topUpAmount, Account account) {
-    LoggerHelper logHelper = new LoggerHelper("setCustTopUpAmount", customer, topUpAmount, account);
+    MethodLogger.logMethod("setCustTopUpAmount", customer, topUpAmount, account);
     CustTopUp topUp = customer.setTopupAmount(account, topUpAmount);
-    logHelper.logMethodReturn(topUp);
+    MethodLogger.logMethodReturn("setCustTopUpAmount", topUp);
     return topUp;
   }
 
@@ -1432,7 +1402,7 @@ public class TruConnect {
   @Deprecated
   @WebMethod
   public PaymentUnitResponse submitPaymentByCreditCard(String sessionId, Account account, CreditCard creditCard, String paymentAmount) {
-    LoggerHelper logHelper = new LoggerHelper("makeCreditCardPayment", sessionId, account, creditCard, paymentAmount);
+    MethodLogger.logMethod("submitPaymentByCreditCard", sessionId, account, creditCard, paymentAmount);
     if (creditCard == null) {
       logger.warn("SessionId " + sessionId + ":: CreditCard Information must be present to submit a CreditCard Payment");
       throw new PaymentException("makeCreditCardPayment", "CreditCard Information must be present to submit a CreditCard Payment");
@@ -1541,13 +1511,13 @@ public class TruConnect {
       logger.warn("Error posting credit card payment. :: " + response.getConfdescr() + " " + response.getAuthcode());
       throw new PaymentException("makeCreditCardPayment", "Error posting credit card payment. :: " + response.getConfdescr() + " " + response.getAuthcode());
     }
-    logHelper.logMethodExit();
+    MethodLogger.logMethodExit("submitPaymentByCreditCard");
     return response;
   }
 
   @WebMethod
   public PaymentUnitResponse submitPaymentByPaymentId(String sessionId, Customer customer, int paymentId, Account account, String paymentAmount) {
-    LoggerHelper logHelper = new LoggerHelper("submitPaymentByPaymentId", sessionId, customer, paymentId, account, paymentAmount);
+    MethodLogger.logMethod("submitPaymentByPaymentId", sessionId, customer, paymentId, account, paymentAmount);
     if (customer == null || customer.getId() <= 0) {
       logger.warn("SessionId " + sessionId + "::Customer cannot be empty");
       throw new CustomerException("Customer cannot be empty");
@@ -1687,7 +1657,7 @@ public class TruConnect {
 
       // send pmt notification
       logger.info("Sending Top-Up notification");
-      // sendPaymentNotification(customer, account, pmttransaction);
+      sendPaymentSuccessNotification(customer, account, pmttransaction);
 
       // get device information
       logger.info("getting device information for update");
@@ -1741,7 +1711,7 @@ public class TruConnect {
 
         // send payment failed notification
         logger.info("Sending Payment Failed notification");
-        // sendPaymentFailedNotification(customer, account, pmttransaction);
+        sendPaymentFailedNotification(customer, account, pmttransaction);
 
         // get device information
         logger.info("getting device information for update");
@@ -1797,7 +1767,7 @@ public class TruConnect {
       }
       throw new PaymentException("submitPaymentByPaymentId", "Error posting payment. :: " + response.getConfdescr() + " " + response.getAuthcode());
     }
-    logHelper.logMethodExit();
+    MethodLogger.logMethodExit("submitPaymentByPaymentId");
     return response;
 
   }
@@ -1849,9 +1819,9 @@ public class TruConnect {
 
   @Deprecated
   private void suspendService(ServiceInstance serviceInstance) {
-    LoggerHelper logHelper = new LoggerHelper("suspendService", serviceInstance);
+    MethodLogger.logMethod("suspendService", serviceInstance);
     suspendSubscriber(serviceInstance, null);
-    logHelper.logMethodExit();
+    MethodLogger.logMethodExit("suspendService");
   }
 
   @Deprecated
@@ -1910,7 +1880,7 @@ public class TruConnect {
 
   @WebMethod
   public NetworkInfo swapDevice(Customer customer, NetworkInfo oldNetworkInfo, Device newDevice) {
-    LoggerHelper logHelper = new LoggerHelper("swapDevice", customer, oldNetworkInfo, newDevice);
+    MethodLogger.logMethod("swapDevice", customer, oldNetworkInfo, newDevice);
     if (customer == null || customer.getId() <= 0) {
       throw new CustomerException("Customer object must be provided");
     }
@@ -1978,29 +1948,29 @@ public class TruConnect {
       logger.warn(ex.getMessage());
       throw ex;
     }
-    logHelper.logMethodReturn(newNetworkInfo);
+    MethodLogger.logMethodReturn("swapDevice", newNetworkInfo);
     return newNetworkInfo;
   }
 
   @WebMethod
   public void updateAccountEmailAddress(Account account) {
-    LoggerHelper logHelper = new LoggerHelper("updateAccountEmailAddress", account);
+    MethodLogger.logMethod("updateAccountEmailAddress", account);
     if (account == null) {
       logger.info("updatingAccountEmailAddress(account) account object is null");
       throw new BillingException("Account object cannot be null.");
     }
     logger.info("Updating EmailAddress for Account " + account.getAccountno() + " to email address " + account.getContact_email());
     billService.updateAccountEmailAddress(account);
-    logHelper.logMethodExit();
+    MethodLogger.logMethodExit("updateAccountEmailAddress");
   }
 
   @WebMethod
   public void updateContract(KenanContract contract) {
-    LoggerHelper logHelper = new LoggerHelper("updateContract", contract);
+    MethodLogger.logMethod("updateContract", contract);
     contractService.updateContract(contract);
     logger.info("Contract " + contract.getContractType() + " updated for account " + contract.getAccount().getAccountno() + " on MDN "
         + contract.getServiceInstance().getExternalId());
-    logHelper.logMethodExit();
+    MethodLogger.logMethodExit("updateContract");
   }
 
   /**
@@ -2011,7 +1981,7 @@ public class TruConnect {
    */
   @WebMethod
   public List<CustPmtMap> updateCreditCardPaymentMethod(Customer customer, CreditCard creditCard) {
-    LoggerHelper logHelper = new LoggerHelper("updateCreditCardPaymentMethod", customer, creditCard);
+    MethodLogger.logMethod("updateCreditCardPaymentMethod", customer, creditCard);
     if (creditCard.getPaymentid() == 0) {
       throw new PaymentException("addCreditCard", "PaymentID cannot be 0 when updating a payment");
     }
@@ -2023,7 +1993,7 @@ public class TruConnect {
       logger.info("Error updating Service Instance information for customer " + customer.getId());
       logger.warn(ex.getMessage());
     }
-    logHelper.logMethodExit();
+    MethodLogger.logMethodExit("updateCreditCardPaymentMethod");
     return customer.getCustpmttypes(creditCard.getPaymentid());
   }
 
@@ -2072,7 +2042,7 @@ public class TruConnect {
 
   @WebMethod
   public void updateDeviceInfoObject(Customer customer, Device deviceInfo) {
-    LoggerHelper logHelper = new LoggerHelper("updateDeviceInfoObject", customer, deviceInfo);
+    MethodLogger.logMethod("updateDeviceInfoObject", customer, deviceInfo);
     if (customer == null) {
       throw new CustomerException("Customer information must be populated");
     }
@@ -2087,7 +2057,6 @@ public class TruConnect {
       throw new CustomerException("Cannot save a device to a different customer");
     }
     deviceInfo.save();
-    logHelper.logMethodExit();
+    MethodLogger.logMethodExit("updateDeviceInfoObject");
   }
-
 }

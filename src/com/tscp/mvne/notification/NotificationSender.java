@@ -12,7 +12,7 @@ public class NotificationSender extends AbstractQueueSender {
   public static final String QUEUECONFAC = "queue/TestJMS";
   public static final String TOPICCONFAC = "TopicConnectionFactory";
 
-  private static final Logger logger = LoggerFactory.getLogger("TSCPMVNELogger");
+  private static final Logger logger = LoggerFactory.getLogger("TSCPMVNE");
 
   public NotificationSender() {
     setConnectionFactory(QUEUECONFAC);

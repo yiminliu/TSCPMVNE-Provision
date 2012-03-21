@@ -21,7 +21,7 @@ import com.tscp.mvno.webservices.API3Service;
  * 
  */
 public final class NetworkGatewayProvider {
-  private static final Logger logger = LoggerFactory.getLogger("TSCPMVNELogger");
+  private static final Logger logger = LoggerFactory.getLogger("TSCPMVNE");
   private static final API3Service service = loadInterface();
   private static final API3 port = service.getAPI3Port();
 
