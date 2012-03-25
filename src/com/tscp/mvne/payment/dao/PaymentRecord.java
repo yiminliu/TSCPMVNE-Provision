@@ -30,6 +30,15 @@ public class PaymentRecord implements Serializable {
 
   private String account;
   private String paymentType;
+  public boolean isRefunded() {
+	return refunded;
+}
+
+public void setRefunded(boolean refunded) {
+	this.refunded = refunded;
+}
+
+private boolean refunded;
 
   public PaymentRecord() {
 

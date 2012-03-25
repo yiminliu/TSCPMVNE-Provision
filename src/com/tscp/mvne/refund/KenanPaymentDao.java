@@ -108,4 +108,36 @@ public class KenanPaymentDao {
       }
     }
   }
+  
+  public static void reversePaymentAndApplyChargeCredit(int accountNo, String amount, int  trackingId)
+	throws RefundException {
+      Session session = HibernateUtil.getSessionFactory().getCurrentSession();
+      Transaction transaction = session.beginTransaction();
+
+      Query query = session.getNamedQuery("sp_reverse_pmt");
+      query.setParameter("in_account_no", accountNo);
+      query.setParameter("in_reversal_amount", amount);
+      //query.setParameter("in_trans_date", transDate);
+      query.setParameter("in_tracking_id", trackingId);
+      List<GeneralSPResponse> list = query.list();
+
+      if (list == null) {
+	        transaction.rollback();
+	        session.close();
+	        throw new ContractException("applyChargeCredit", "Error applying pccharge credit. No cursor items returned...");
+      }else if (list.size() > 0) {
+		        if (!list.get(0).getStatus().equals("Y")) {
+			        transaction.rollback();
+		         	throw new ContractException("applyChargeCredit", "Error applying pccharge credit on card "
+		                    + ". Fail Reason is : "
+		                    + list.get(0).getMvnemsg());
+		       } else {
+			      transaction.commit();
+		       }
+      }        
+	    else {
+		transaction.rollback();
+		throw new ContractException("applyChargeCredit", "Error applying pccharge credit. No cursor items returned...");
+		 }
+  }
 }

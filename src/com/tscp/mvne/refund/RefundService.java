@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.List;
 
 import com.tscp.mvne.billing.Account;
+
 import com.tscp.mvne.payment.dao.CreditCard;
 
 public class RefundService {
@@ -19,5 +20,9 @@ public class RefundService {
   public void applyChargeCredit(CreditCard creditCard, String amount) throws RefundException {
     KenanPaymentDao.applyChargeCredit(creditCard, amount);
   }
+  
+  public void reversePaymentAndApplyChargeCredit(int account_no, String amount, int  trackingId) throws RefundException {
+		KenanPaymentDao.reversePaymentAndApplyChargeCredit(account_no, amount,  trackingId);
+	}
 
 }

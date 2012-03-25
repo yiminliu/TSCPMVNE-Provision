@@ -25,6 +25,7 @@ import com.tscp.mvne.billing.dao.UsageSummary;
 import com.tscp.mvne.billing.exception.BillingException;
 import com.tscp.mvne.contract.ContractService;
 import com.tscp.mvne.contract.KenanContract;
+import com.tscp.mvne.contract.exception.ContractException;
 import com.tscp.mvne.customer.Customer;
 import com.tscp.mvne.customer.CustomerException;
 import com.tscp.mvne.customer.DeviceException;
@@ -150,6 +151,13 @@ public class TruConnect implements TscpMvne {
     refundService.applyChargeCredit(creditCard, amount);
     logHelper.logMethodExit();
   }
+  
+  @WebMethod
+	public void reverseKenanPaymentAndApplyChargeCredit(int account_no, String amount, int  trackingId) throws ContractException{
+		LoggerHelper logHelper = new LoggerHelper("reversePayment", account_no, amount,  trackingId);
+		refundService.reversePaymentAndApplyChargeCredit(account_no, amount,  trackingId);
+		logHelper.logMethodExit();
+	}
 
   @Override
   @WebMethod
