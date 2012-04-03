@@ -152,10 +152,11 @@ public class TruConnect implements TscpMvne {
     logHelper.logMethodExit();
   }
   
+  @Override
   @WebMethod
-	public void reverseKenanPaymentAndApplyChargeCredit(int account_no, String amount, int  trackingId) throws ContractException{
-		LoggerHelper logHelper = new LoggerHelper("reversePayment", account_no, amount,  trackingId);
-		refundService.reversePaymentAndApplyChargeCredit(account_no, amount,  trackingId);
+  public void refundPayment(int account_no, String amount, int trackingId, String refundBy) throws ContractException{
+		LoggerHelper logHelper = new LoggerHelper("reverseKenanPaymentAndApplyCredit", account_no, amount,  trackingId, refundBy);
+		refundService.applyChargeCredit(account_no, trackingId, amount, refundBy);
 		logHelper.logMethodExit();
 	}
 

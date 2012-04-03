@@ -109,18 +109,17 @@ public class KenanPaymentDao {
     }
   }
   
-  public static void reversePaymentAndApplyChargeCredit(int accountNo, String amount, int  trackingId)
+  public static void applyChargeCredit(int accountNo, int trackingId, String amount, String refundBy)
 	throws RefundException {
       Session session = HibernateUtil.getSessionFactory().getCurrentSession();
       Transaction transaction = session.beginTransaction();
 
-      Query query = session.getNamedQuery("sp_reverse_pmt");
+      Query query = session.getNamedQuery("sp_refund_pmt");
       query.setParameter("in_account_no", accountNo);
-      query.setParameter("in_reversal_amount", amount);
-      //query.setParameter("in_trans_date", transDate);
       query.setParameter("in_tracking_id", trackingId);
+      query.setParameter("in_refund_amount", amount);      
+      query.setParameter("in_refund_by", refundBy);
       List<GeneralSPResponse> list = query.list();
-
       if (list == null) {
 	        transaction.rollback();
 	        session.close();
@@ -135,9 +134,9 @@ public class KenanPaymentDao {
 			      transaction.commit();
 		       }
       }        
-	    else {
-		transaction.rollback();
-		throw new ContractException("applyChargeCredit", "Error applying pccharge credit. No cursor items returned...");
-		 }
+	  else {
+		   transaction.rollback();
+		   throw new ContractException("applyChargeCredit", "Error applying pccharge credit. No cursor items returned...");
+	}
   }
 }

@@ -3,6 +3,8 @@ package com.tscp.mvne.payment.dao;
 import java.io.Serializable;
 import java.util.Date;
 
+import javax.persistence.Transient;
+
 public class PaymentRecord implements Serializable {
 
   /**
@@ -27,19 +29,13 @@ public class PaymentRecord implements Serializable {
   private Date postDate;
 
   private int accountNo;
+ 
+  private Date refundDate;
 
   private String account;
   private String paymentType;
-  public boolean isRefunded() {
-	return refunded;
-}
-
-public void setRefunded(boolean refunded) {
-	this.refunded = refunded;
-}
-
-private boolean refunded;
-
+  
+  
   public PaymentRecord() {
 
   }
@@ -164,4 +160,11 @@ private boolean refunded;
     this.accountNo = accountNo;
   }
 
+  public Date getRefundDate() {
+	return refundDate;
+  }
+
+  public void setRefundDate(Date refundDate) {
+	this.refundDate = refundDate;
+  }
 }

@@ -4,7 +4,9 @@ import javax.xml.ws.WebServiceException;
 
 import com.tscp.mvne.billing.Account;
 import com.tscp.mvne.billing.ServiceInstance;
+import com.tscp.mvne.contract.exception.ContractException;
 import com.tscp.mvne.customer.Customer;
+import com.tscp.mvne.logger.LoggerHelper;
 import com.tscp.mvne.network.NetworkInfo;
 
 public interface TscpMvne {
@@ -26,5 +28,8 @@ public interface TscpMvne {
   public Account createBillingAccount(Customer cust, Account account) throws WebServiceException;
 
   public Account createServiceInstance(Account account, ServiceInstance serviceinstance) throws WebServiceException;
+
+  public void refundPayment(int account_no, String amount, int  trackingId, String reverseBy) throws ContractException;
+
 
 }

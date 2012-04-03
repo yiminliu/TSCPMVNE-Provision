@@ -20,8 +20,9 @@
     <property name="postDate" column="post_date" />
     <property name="account" column="account" />
     <property name="paymentType" column="payment_type" />
+    <property name="refundDate" column="refund_date" />
   </class>
-
+  
   <sql-query name="fetch_cust_pmt_trans" callable="true">
     <return class="com.tscp.mvne.payment.dao.PaymentRecord">
       <return-property name="transId" column="trans_id" />
@@ -38,9 +39,9 @@
       <return-property name="postDate" column="post_date" />
       <return-property name="account" column="account" />
       <return-property name="paymentType" column="payment_type" />
+      <return-property name="refundDate" column="refund_date" />
     </return>
-    { call MVNE_API_PKG.fetch_cust_pmt_trans(?,:in_cust_id) }
+    { call MVNE_API_PKG.fetch_cust_pmt_trans_refund(?,:in_cust_id) }
   </sql-query>
-
 
 </hibernate-mapping>
