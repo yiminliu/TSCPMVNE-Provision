@@ -31,7 +31,7 @@
       <return-property name="notes" column="notes" />
       <return-property name="balance" column="balance" />
     </return>
-    { call sp_fetch_charge_history(?,:in_account_no,:in_external_id) }
+    { call sp_fetch_charge_history_v3(?,:in_account_no,:in_external_id) }
   </sql-query>
 
 </hibernate-mapping>
