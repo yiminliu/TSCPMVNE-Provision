@@ -39,18 +39,9 @@
       <return-property name="mvnemsgcode" column="mvnemsgcode" />
     </return>
     { call MVNE_API_PKG.truconnect_pccharge_credit(?,:in_cardno,:in_cardexpdt,:in_seccode,:in_pymntamt,:in_zip,:in_cardholder,:in_street) }
-  </sql-query>
-  
-   <sql-query name="sp_reverse_pmt" callable="true">
-    <return class="com.tscp.mvne.customer.dao.GeneralSPResponse">
-      <return-property name="status" column="status" />
-      <return-property name="mvnemsg" column="mvnemsg" />
-      <return-property name="mvnemsgcode" column="mvnemsgcode" />
-   </return>
-    { call sp_reverse_pmt_v1(?,:in_account_no, :in_tracking_id, :in_reverse_amount, :in_reverse_by) }
-  </sql-query>
-  
-   <sql-query name="sp_refund_pmt" callable="true">
+  </sql-query>  
+ 
+  <sql-query name="sp_refund_pmt" callable="true">
     <return class="com.tscp.mvne.customer.dao.GeneralSPResponse">
       <return-property name="status" column="status" />
       <return-property name="mvnemsg" column="mvnemsg" />
