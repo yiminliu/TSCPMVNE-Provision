@@ -41,7 +41,7 @@
       <return-property name="paymentType" column="payment_type" />
       <return-property name="refundDate" column="refund_date" />
     </return>
-    { call MVNE_API_PKG.fetch_cust_pmt_trans_refund(?,:in_cust_id) }
+    { call MVNE_API_PKG.fetch_cust_pmt_trans(?,:in_cust_id) }
   </sql-query>
 
 </hibernate-mapping>
